@@ -1,0 +1,1 @@
+python "$HOME\source\github\enginefire\opus\tools\generate_font_header.py" --name readex_pro --data "$HOME\source\github\enginefire\assets\readex_pro.json" --out="$HOME\source\github\enginefire\src\generated\font_readex_pro.h"
