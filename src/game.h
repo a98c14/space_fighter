@@ -15,3 +15,16 @@
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
+
+typedef struct
+{
+    /** engine */
+    Arena*     persistent_arena;
+    Arena*     frame_arena;
+    Window*    window;
+    EngineTime time;
+
+} GameState;
+global GameState* g_state;
+
+internal void game_init();
