@@ -38,7 +38,7 @@ g_init()
 internal GameEntity*
 g_entity_alloc()
 {
-    GameEntity* result = g_state->first_entity;
+    GameEntity* result = g_state->free_entities;
     stack_pop(g_state->free_entities);
     if (!result)
     {

@@ -21,6 +21,8 @@ enum
 {
     EntityProp_RotateTowardsAim,
     EntityProp_RotateTowardsHeading,
+    EntityProp_Lifetime,
+    EntityProp_MarkedForDeletion,
     EntityProp_COUNT
 };
 
@@ -46,6 +48,9 @@ struct GameEntity
     Vec2    heading;
     Vec2    look_at;
     float32 speed;
+
+    /** lifetime */
+    float32 remaining_life;
 
     /** render info */
     Color color;

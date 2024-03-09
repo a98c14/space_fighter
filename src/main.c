@@ -26,7 +26,8 @@ main(void)
             break;
 
         /** gather input */
-        Vec2 player_direction = vec2_zero();
+        Vec2   player_direction = vec2_zero();
+        bool32 is_firing        = false;
         {
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
@@ -53,6 +54,19 @@ main(void)
             player->heading = player_direction;
             player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
             draw_heading(player->position, player->heading, ColorWhite, 2);
+
+            if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft))
+            {
+                GameEntity* bullet = g_entity_alloc();
+                g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
+                g_entity_enable_prop(bullet, EntityProp_Lifetime);
+                bullet->position       = player->position;
+                bullet->heading        = player->look_at;
+                bullet->scale          = vec2(24, 24);
+                bullet->color          = ColorWhite;
+                bullet->speed          = 200;
+                bullet->remaining_life = 2;
+            }
         }
 
         float32 dt = g_state->time.dt;
@@ -63,16 +77,29 @@ main(void)
         shader_data.softness          = d_default_text_softness;
         shader_data.outline_thickness = d_default_text_outline_thickness;
 
-        // Rect r = rect_at(vec2(-500, 0), vec2(600, 500), AlignmentLeft);
-        // draw_debug_rect_b(r);
-        // r = rect_shrink_f32(r, 10);
-
-        // draw_text(string("BottomLeft"), r, ANCHOR_BL_BL, font_size, ColorWhite100);
-        // draw_text(string("BottomRight"), r, ANCHOR_BR_BR, font_size, ColorWhite100);
-        // draw_text(string("TopLeft"), r, ANCHOR_TL_TL, font_size, ColorWhite100);
-        // draw_text(string("TopRight"), r, ANCHOR_TR_TR, font_size, ColorWhite100);
-
         GameEntity* entity;
+        /** delete marked entities */
+        profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_MarkedForDeletion))
+                continue;
+
+            g_entity_free(entity);
+        }
+
+        /** lifetime */
+        profiler_scope("lifetime") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_Lifetime))
+                continue;
+
+            entity->remaining_life -= dt;
+            if (entity->remaining_life < 0)
+            {
+                g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
+            }
+        }
+
         /** rotate towards */
         profiler_scope("rotate towards heading") for_each(entity, g_state->first_entity)
         {
