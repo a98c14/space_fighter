@@ -13,9 +13,11 @@ main(void)
 
     GameEntity* player = g_entity_alloc();
     player->color      = ColorWhite;
-    player->scale      = vec2(24, 24);
+    player->scale      = vec2(1, 1);
     player->speed      = 100;
+    player->sprite     = SPRITE_GAME_RED_BEATLE;
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
+    g_entity_enable_prop(player, EntityProp_Sprite);
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -26,8 +28,7 @@ main(void)
             break;
 
         /** gather input */
-        Vec2   player_direction = vec2_zero();
-        bool32 is_firing        = false;
+        Vec2 player_direction = vec2_zero();
         {
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
@@ -121,11 +122,23 @@ main(void)
         }
 
         /** render */
+        draw_context_push(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing);
         profiler_scope("render") for_each(entity, g_state->first_entity)
         {
-            draw_triangle(entity->position, entity->rotation, entity->color, entity->scale.x);
+            if (g_entity_has_prop(entity, EntityProp_Sprite))
+            {
+                draw_sprite(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one());
+            }
+            else
+            {
+                draw_triangle(entity->position, entity->rotation, entity->color, entity->scale.x);
+            }
         }
+        draw_context_pop();
 
+        ShaderDataBasic basic_shader = {0};
+        r_draw_pass(g_state->pass_pixel_perfect, g_state->pass_post_processing, SORT_LAYER_INDEX_GAME, g_state->material_pass_default, &basic_shader);
+        r_draw_pass(g_state->pass_post_processing, g_state->pass_default, SORT_LAYER_INDEX_GAME, g_state->material_post_processing, g_post_processing_state->uniform_data);
         r_render(g_renderer, g_state->time.dt);
         window_update(g_state->window);
     }

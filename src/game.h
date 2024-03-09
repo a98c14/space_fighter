@@ -11,10 +11,26 @@
 
 #include <opus.h>
 
+#include "generated/sprites.h"
+#include "post_processing.h"
+
+#include "post_processing.c"
 #include <opus.c>
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
+#define WORLD_WIDTH   960
+#define WORLD_HEIGHT  540
+
+#define SORT_LAYER_INDEX_GROUND             2
+#define SORT_LAYER_INDEX_SHADOW             3
+#define SORT_LAYER_INDEX_BACKGROUND_EFFECTS 4
+#define SORT_LAYER_INDEX_GAME               6
+#define SORT_LAYER_INDEX_BULLETS            8
+#define SORT_LAYER_INDEX_IN_GAME_EFFECTS    9
+#define SORT_LAYER_INDEX_HUD                11
+#define SORT_LAYER_INDEX_UI                 13
+#define SORT_LAYER_INDEX_POST_GAME          15
 
 typedef uint64 EntityProp;
 enum
@@ -23,6 +39,7 @@ enum
     EntityProp_RotateTowardsHeading,
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
+    EntityProp_Sprite,
     EntityProp_COUNT
 };
 
@@ -53,7 +70,8 @@ struct GameEntity
     float32 remaining_life;
 
     /** render info */
-    Color color;
+    Color       color;
+    SpriteIndex sprite;
 };
 
 typedef struct
@@ -64,6 +82,13 @@ typedef struct
     Window*    window;
     EngineTime time;
 
+    /** rendering */
+    PassIndex     pass_post_processing;
+    PassIndex     pass_pixel_perfect;
+    PassIndex     pass_default;
+    MaterialIndex material_post_processing;
+
+    MaterialIndex material_pass_default;
     /** input */
     InputMouse input_mouse;
 
@@ -72,6 +97,7 @@ typedef struct
     uint64      entity_count;
     GameEntity* first_entity;
     GameEntity* last_entity;
+
 } GameState;
 global GameState* g_state;
 
