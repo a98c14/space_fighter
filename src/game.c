@@ -44,6 +44,7 @@ g_init()
     renderer_load_sprite_atlas(g_renderer, atlas);
     draw_context_activate_atlas(atlas);
     post_processing_init(persistent_arena, g_renderer);
+    ps_init(persistent_arena, g_state->frame_arena, atlas, 512, g_state->pass_default);
 
     /** assets */
     {
@@ -105,13 +106,13 @@ g_entity_free(GameEntity* e)
 internal bool32
 g_entity_has_prop(GameEntity* e, EntityProp prop)
 {
-    return (e->props[prop / sizeof(EntityProp)] & 1 << (prop % sizeof(EntityProp))) > 0;
+    return (e->props[prop / (sizeof(EntityProp) * 8)] & 1 << (prop % (sizeof(EntityProp) * 8))) > 0;
 }
 
 internal void
 g_entity_enable_prop(GameEntity* e, EntityProp prop)
 {
-    e->props[prop / sizeof(EntityProp)] |= 1 << (prop % sizeof(EntityProp));
+    e->props[prop / (sizeof(EntityProp) * 8)] |= 1 << (prop % (sizeof(EntityProp) * 8));
 }
 
 /** render */
@@ -126,4 +127,23 @@ draw_projectile(Vec2 pos, float32 radius)
     shader_data.slice_ratio          = 1;
     shader_data.fill_ratio           = 1;
     r_draw_single(key, transform_quad_aligned(pos, vec2(radius, radius)), &shader_data);
+}
+
+/** utils */
+internal GameEntity*
+g_spawn_enemy(Vec2 position)
+{
+    GameEntity* result      = g_entity_alloc();
+    result->position        = position;
+    result->color           = ColorWhite;
+    result->scale           = vec2(1, 1);
+    result->speed           = 30;
+    result->sprite          = SPRITE_GAME_SHIPS_RANGER;
+    result->collider_type   = ColliderTypeEnemyHitbox;
+    result->collider_radius = 10;
+    g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
+    g_entity_enable_prop(result, EntityProp_Sprite);
+    g_entity_enable_prop(result, EntityProp_SimpleAI);
+    g_entity_enable_prop(result, EntityProp_Collider);
+    return result;
 }

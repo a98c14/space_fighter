@@ -12,17 +12,19 @@
 #include <opus.h>
 
 #include "generated/sprites.h"
+#include "particle_system.h"
 #include "post_processing.h"
 
+#include "particle_system.c"
 #include "post_processing.c"
 #include <opus.c>
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
-// #define WORLD_WIDTH   960
-// #define WORLD_HEIGHT  540
-#define WORLD_WIDTH  640
-#define WORLD_HEIGHT 360
+#define WORLD_WIDTH   960
+#define WORLD_HEIGHT  540
+// #define WORLD_WIDTH  640
+// #define WORLD_HEIGHT 360
 
 #define SORT_LAYER_INDEX_GROUND             2
 #define SORT_LAYER_INDEX_SHADOW             3
@@ -34,6 +36,16 @@
 #define SORT_LAYER_INDEX_UI                 13
 #define SORT_LAYER_INDEX_POST_GAME          15
 
+typedef enum
+{
+    ColliderTypeNone,
+    ColliderTypeEnemyHitbox,
+    ColliderTypePlayerHitbox,
+    ColliderTypePlayerAttack,
+    ColliderTypeEnemyAttack
+} ColliderType;
+
+/** entity */
 typedef uint64 EntityProp;
 enum
 {
@@ -42,8 +54,11 @@ enum
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
     EntityProp_Sprite,
+    EntityProp_SimpleAI,
     EntityProp_Bullet,
     EntityProp_Player,
+    EntityProp_Collider,
+    EntityProp_Attack,
     EntityProp_COUNT
 };
 
@@ -64,6 +79,10 @@ struct GameEntity
     Vec2    position;
     Vec2    scale;
     float32 rotation;
+
+    /** physics */
+    ColliderType collider_type;
+    float32      collider_radius;
 
     /** movement */
     Vec2    heading;
@@ -104,6 +123,9 @@ typedef struct
     GameEntity* first_entity;
     GameEntity* last_entity;
 
+    /** game state */
+    float32 t_spawn;
+
 } GameState;
 global GameState* g_state;
 
@@ -124,3 +146,22 @@ typedef struct
     float32 slice_ratio;
 } ShaderDataProjectile;
 internal void draw_projectile(Vec2 pos, float32 radius);
+
+/** utils */
+internal GameEntity* g_spawn_enemy(Vec2 position);
+
+/** physics */
+typedef struct
+{
+    ColliderType type;
+    GameEntity*  entity;
+    Vec2         position;
+    float32      radius;
+} ColliderInfo;
+
+typedef struct
+{
+    GameEntity* a;
+    GameEntity* b;
+    Vec2        position;
+} Collision;

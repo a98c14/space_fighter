@@ -15,9 +15,11 @@ main(void)
     player->color      = ColorWhite;
     player->scale      = vec2(1, 1);
     player->speed      = 100;
-    player->sprite     = SPRITE_GAME_RED_BEATLE;
+    player->sprite     = SPRITE_GAME_SHIPS_RED_BEATLE;
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Sprite);
+
+    GameEntity* enemy = g_spawn_enemy(vec2(100, 100));
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -62,12 +64,15 @@ main(void)
                 g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
                 g_entity_enable_prop(bullet, EntityProp_Lifetime);
                 g_entity_enable_prop(bullet, EntityProp_Bullet);
-                bullet->position       = player->position;
-                bullet->heading        = player->look_at;
-                bullet->scale          = vec2(24, 24);
-                bullet->color          = ColorWhite;
-                bullet->speed          = 200;
-                bullet->remaining_life = 2;
+                g_entity_enable_prop(bullet, EntityProp_Collider);
+                bullet->position        = player->position;
+                bullet->heading         = player->look_at;
+                bullet->scale           = vec2(24, 24);
+                bullet->color           = ColorWhite;
+                bullet->speed           = 200;
+                bullet->collider_type   = ColliderTypePlayerAttack;
+                bullet->collider_radius = 10;
+                bullet->remaining_life  = 2;
             }
         }
 
@@ -87,6 +92,27 @@ main(void)
                 continue;
 
             g_entity_free(entity);
+        }
+
+        /** enemy spawner */
+        profiler_scope("enemy spawner")
+        {
+            g_state->t_spawn -= dt;
+            if (g_state->t_spawn < 0)
+            {
+                g_state->t_spawn = 2;
+                g_spawn_enemy(vec2(100, 100));
+            }
+        }
+
+        /** simple ai */
+        profiler_scope("simple ai") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_SimpleAI))
+                continue;
+
+            entity->heading = heading_to_vec2(entity->position, player->position);
+            entity->look_at = heading_to_vec2(entity->position, player->position);
         }
 
         /** lifetime */
@@ -122,8 +148,58 @@ main(void)
             entity->position = add_vec2(entity->position, direction);
         }
 
-        /** render sprites */
+        /** collision */
+        profiler_scope("physics")
+        {
+            uint32        collider_count = 0;
+            ColliderInfo* colliders      = arena_push_array(g_state->frame_arena, ColliderInfo, g_state->entity_count);
 
+            profiler_scope("gather colliders") for_each(entity, g_state->first_entity)
+            {
+                if (!g_entity_has_prop(entity, EntityProp_Collider))
+                    continue;
+
+                colliders[collider_count].type     = entity->collider_type;
+                colliders[collider_count].position = entity->position;
+                colliders[collider_count].radius   = entity->collider_radius;
+                colliders[collider_count].entity   = entity;
+                collider_count++;
+            }
+
+            // SPEED(selim): naive bruteforce implementation
+            uint32     collision_count = 0;
+            Collision* collisions      = arena_push_array(g_state->frame_arena, Collision, collider_count);
+            profiler_scope("check collisions") for (uint32 i = 0; i < collider_count; i++)
+            {
+                for (uint32 j = i + 1; j < collider_count; j++)
+                {
+                    ColliderInfo a             = colliders[i];
+                    ColliderInfo b             = colliders[j];
+                    bool32       can_intersect = (a.type == ColliderTypePlayerAttack && b.type == ColliderTypeEnemyHitbox) || (a.type == ColliderTypeEnemyHitbox && b.type == ColliderTypePlayerAttack);
+                    if (!can_intersect)
+                        continue;
+
+                    Intersection i = intersects_circle(circle(a.position, a.radius), circle(b.position, b.radius));
+                    if (i.intersects)
+                    {
+                        collisions[collision_count].a        = a.entity;
+                        collisions[collision_count].b        = b.entity;
+                        collisions[collision_count].position = lerp_vec2(a.position, b.position, 0.5);
+                        collision_count++;
+                    }
+                }
+            }
+
+            profiler_scope("handle collisions") for (uint32 i = 0; i < collision_count; i++)
+            {
+                Collision* collision = &collisions[i];
+                ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+            }
+        }
+
+        ps_update(dt);
+
+        /** render sprites */
         profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing) for_each(entity, g_state->first_entity)
         {
             if (g_entity_has_prop(entity, EntityProp_Sprite))
@@ -131,13 +207,13 @@ main(void)
                 draw_sprite(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one());
             }
         }
+        /** render bullets */
         profiler_scope("render bullets") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect) for_each(entity, g_state->first_entity)
         {
             if (!g_entity_has_prop(entity, EntityProp_Bullet))
                 continue;
             draw_projectile(entity->position, entity->scale.x);
         }
-        /** render bullets */
 
         ShaderDataBasic basic_shader = {0};
         r_draw_pass(g_state->pass_pixel_perfect, g_state->pass_post_processing, SORT_LAYER_INDEX_GAME, g_state->material_pass_default, &basic_shader);
