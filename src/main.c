@@ -61,6 +61,7 @@ main(void)
                 GameEntity* bullet = g_entity_alloc();
                 g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
                 g_entity_enable_prop(bullet, EntityProp_Lifetime);
+                g_entity_enable_prop(bullet, EntityProp_Bullet);
                 bullet->position       = player->position;
                 bullet->heading        = player->look_at;
                 bullet->scale          = vec2(24, 24);
@@ -121,20 +122,22 @@ main(void)
             entity->position = add_vec2(entity->position, direction);
         }
 
-        /** render */
-        draw_context_push(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing);
-        profiler_scope("render") for_each(entity, g_state->first_entity)
+        /** render sprites */
+
+        profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing) for_each(entity, g_state->first_entity)
         {
             if (g_entity_has_prop(entity, EntityProp_Sprite))
             {
                 draw_sprite(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one());
             }
-            else
-            {
-                draw_triangle(entity->position, entity->rotation, entity->color, entity->scale.x);
-            }
         }
-        draw_context_pop();
+        profiler_scope("render bullets") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect) for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_Bullet))
+                continue;
+            draw_projectile(entity->position, entity->scale.x);
+        }
+        /** render bullets */
 
         ShaderDataBasic basic_shader = {0};
         r_draw_pass(g_state->pass_pixel_perfect, g_state->pass_post_processing, SORT_LAYER_INDEX_GAME, g_state->material_pass_default, &basic_shader);

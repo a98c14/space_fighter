@@ -19,8 +19,10 @@
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
-#define WORLD_WIDTH   960
-#define WORLD_HEIGHT  540
+// #define WORLD_WIDTH   960
+// #define WORLD_HEIGHT  540
+#define WORLD_WIDTH  640
+#define WORLD_HEIGHT 360
 
 #define SORT_LAYER_INDEX_GROUND             2
 #define SORT_LAYER_INDEX_SHADOW             3
@@ -40,6 +42,8 @@ enum
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
     EntityProp_Sprite,
+    EntityProp_Bullet,
+    EntityProp_Player,
     EntityProp_COUNT
 };
 
@@ -89,6 +93,8 @@ typedef struct
     MaterialIndex material_post_processing;
 
     MaterialIndex material_pass_default;
+    MaterialIndex material_projectile;
+
     /** input */
     InputMouse input_mouse;
 
@@ -108,3 +114,13 @@ internal GameEntity* g_entity_alloc();
 internal void        g_entity_free(GameEntity* e);
 internal bool32      g_entity_has_prop(GameEntity* e, EntityProp prop);
 internal void        g_entity_enable_prop(GameEntity* e, EntityProp prop);
+
+/** render */
+typedef struct
+{
+    Vec4    color;
+    Vec4    outer_color;
+    float32 fill_ratio;
+    float32 slice_ratio;
+} ShaderDataProjectile;
+internal void draw_projectile(Vec2 pos, float32 radius);

@@ -47,6 +47,13 @@ g_init()
 
     /** assets */
     {
+        g_state->material_projectile = material_new(
+            g_renderer,
+            file_read_all_as_string(temp.arena, string(SHADER_PATH "\\enemy_projectile.vert")),
+            file_read_all_as_string(temp.arena, string(SHADER_PATH "\\enemy_projectile.frag")),
+            sizeof(ShaderDataProjectile),
+            true);
+
         g_state->material_post_processing = material_new(
             g_renderer,
             file_read_all_as_string(temp.arena, string(SHADER_PATH "\\post_processing.vert")),
@@ -105,4 +112,18 @@ internal void
 g_entity_enable_prop(GameEntity* e, EntityProp prop)
 {
     e->props[prop / sizeof(EntityProp)] |= 1 << (prop % sizeof(EntityProp));
+}
+
+/** render */
+internal void
+draw_projectile(Vec2 pos, float32 radius)
+{
+    RenderKey key = render_key_new(d_state->ctx->view, d_state->ctx->sort_layer, d_state->ctx->pass, TEXTURE_INDEX_NULL, g_renderer->quad, g_state->material_projectile);
+
+    ShaderDataProjectile shader_data = {0};
+    shader_data.color                = color_v4(ColorWhite);
+    shader_data.outer_color          = color_v4(ColorRed500);
+    shader_data.slice_ratio          = 1;
+    shader_data.fill_ratio           = 1;
+    r_draw_single(key, transform_quad_aligned(pos, vec2(radius, radius)), &shader_data);
 }
