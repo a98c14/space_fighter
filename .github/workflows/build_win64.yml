@@ -2,7 +2,7 @@ name: build_win64
 
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "release-*" ]
 
 env:
   version: '0.0'
