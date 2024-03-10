@@ -7,6 +7,7 @@ g_init()
     ThreadContext tctx;
     tctx_init_and_equip(&tctx);
     logger_init();
+    random_init(0x381927afau);
 
     Arena* persistent_arena   = make_arena_reserve(mb(128));
     g_state                   = arena_push_struct_zero(persistent_arena, GameState);
@@ -133,16 +134,17 @@ draw_projectile(Vec2 pos, float32 radius)
 internal GameEntity*
 g_spawn_enemy(Vec2 position)
 {
-    GameEntity* result      = g_entity_alloc();
-    result->position        = position;
-    result->color           = ColorWhite;
-    result->scale           = vec2(1, 1);
-    result->speed           = 30;
-    result->sprite          = SPRITE_GAME_SHIPS_RANGER;
-    result->collider_type   = ColliderTypeEnemyHitbox;
-    result->collider_radius = 10;
+    GameEntity* result        = g_entity_alloc();
+    result->position          = position;
+    result->color             = ColorWhite;
+    result->scale             = vec2(1, 1);
+    result->coin_on_death.max = 10;
+    result->speed             = 30;
+    result->sprite            = SPRITE_GAME_SHIPS_RANGER;
+    result->collider_type     = ColliderTypeEnemyHitbox;
+    result->collider_radius   = 26;
+    result->health            = 10;
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
-    g_entity_enable_prop(result, EntityProp_Sprite);
     g_entity_enable_prop(result, EntityProp_SimpleAI);
     g_entity_enable_prop(result, EntityProp_Collider);
     return result;

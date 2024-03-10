@@ -53,7 +53,6 @@ enum
     EntityProp_RotateTowardsHeading,
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
-    EntityProp_Sprite,
     EntityProp_SimpleAI,
     EntityProp_Bullet,
     EntityProp_Player,
@@ -80,6 +79,14 @@ struct GameEntity
     Vec2    scale;
     float32 rotation;
 
+    /** combat */
+    float32 health;
+    float32 attack_rate;
+    float32 t_attack;
+
+    /** loot */
+    IRange coin_on_death;
+
     /** physics */
     ColliderType collider_type;
     float32      collider_radius;
@@ -95,6 +102,10 @@ struct GameEntity
     /** render info */
     Color       color;
     SpriteIndex sprite;
+
+    float32        t_animation_clock;
+    AnimationIndex animation;
+    uint32         frame;
 };
 
 typedef struct
@@ -126,6 +137,8 @@ typedef struct
     /** game state */
     float32 t_spawn;
 
+    /** editor */
+    bool32 editor_active;
 } GameState;
 global GameState* g_state;
 

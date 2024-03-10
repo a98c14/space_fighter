@@ -11,13 +11,13 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
-    GameEntity* player = g_entity_alloc();
-    player->color      = ColorWhite;
-    player->scale      = vec2(1, 1);
-    player->speed      = 100;
-    player->sprite     = SPRITE_GAME_SHIPS_RED_BEATLE;
+    GameEntity* player  = g_entity_alloc();
+    player->color       = ColorWhite;
+    player->scale       = vec2(1, 1);
+    player->speed       = 100;
+    player->sprite      = SPRITE_GAME_SHIPS_RED_BEATLE;
+    player->attack_rate = 0.3;
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
-    g_entity_enable_prop(player, EntityProp_Sprite);
 
     GameEntity* enemy = g_spawn_enemy(vec2(100, 100));
 
@@ -58,8 +58,9 @@ main(void)
             player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
             draw_heading(player->position, player->heading, ColorWhite, 2);
 
-            if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft))
+            if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
+                player->t_attack   = player->attack_rate;
                 GameEntity* bullet = g_entity_alloc();
                 g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
                 g_entity_enable_prop(bullet, EntityProp_Lifetime);
@@ -76,8 +77,7 @@ main(void)
             }
         }
 
-        float32 dt = g_state->time.dt;
-
+        float32        dt             = g_state->time.dt;
         ShaderDataText shader_data    = {0};
         shader_data.color             = d_color_white;
         shader_data.thickness         = d_default_text_thickness;
@@ -91,7 +91,44 @@ main(void)
             if (!g_entity_has_prop(entity, EntityProp_MarkedForDeletion))
                 continue;
 
+            bool32 drops_coin = entity->coin_on_death.min > 0 || entity->coin_on_death.max > 0;
+            if (drops_coin)
+            {
+                uint32 coin_count = random_between_i32(entity->coin_on_death.min, entity->coin_on_death.max);
+                for (uint32 i = 0; i < coin_count; i++)
+                {
+                    GameEntity* coin = g_entity_alloc();
+                    coin->animation  = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
+                    coin->position   = random_point_in_circle(entity->position, 30);
+                    coin->scale      = vec2(1, 1);
+                    coin->color      = ColorWhite;
+                }
+            }
+
             g_entity_free(entity);
+        }
+
+        /** animation */
+        profiler_scope("animation") for_each(entity, g_state->first_entity)
+        {
+            if (!(entity->animation > 0))
+                continue;
+
+            entity->t_animation_clock -= dt;
+
+            Animation active_animation = Animations[entity->animation];
+            entity->sprite             = active_animation.sprite_start_index + entity->frame;
+            if (entity->t_animation_clock < 0)
+            {
+                entity->frame             = (entity->frame + 1) % animation_length(active_animation);
+                entity->t_animation_clock = (1.0f / 24);
+            }
+        }
+
+        /** attack state  */
+        profiler_scope("attack state") for_each(entity, g_state->first_entity)
+        {
+            entity->t_attack = max(0, entity->t_attack - dt);
         }
 
         /** enemy spawner */
@@ -166,16 +203,19 @@ main(void)
                 collider_count++;
             }
 
-            // SPEED(selim): naive bruteforce implementation
+            // SPEED(selim): simple bruteforce implementation
+            // TODO(selim): keep previous frame collisions and compare to see if the collision is new or not
             uint32     collision_count = 0;
             Collision* collisions      = arena_push_array(g_state->frame_arena, Collision, collider_count);
             profiler_scope("check collisions") for (uint32 i = 0; i < collider_count; i++)
             {
                 for (uint32 j = i + 1; j < collider_count; j++)
                 {
-                    ColliderInfo a             = colliders[i];
-                    ColliderInfo b             = colliders[j];
-                    bool32       can_intersect = (a.type == ColliderTypePlayerAttack && b.type == ColliderTypeEnemyHitbox) || (a.type == ColliderTypeEnemyHitbox && b.type == ColliderTypePlayerAttack);
+                    ColliderInfo a = colliders[i];
+                    ColliderInfo b = colliders[j];
+
+                    // TODO(selim): create a lookup array for collision types
+                    bool32 can_intersect = (a.type == ColliderTypePlayerAttack && b.type == ColliderTypeEnemyHitbox) || (a.type == ColliderTypeEnemyHitbox && b.type == ColliderTypePlayerAttack);
                     if (!can_intersect)
                         continue;
 
@@ -193,7 +233,41 @@ main(void)
             profiler_scope("handle collisions") for (uint32 i = 0; i < collision_count; i++)
             {
                 Collision* collision = &collisions[i];
+
+                GameEntity* bullet = 0;
+                GameEntity* target = 0;
+                if (g_entity_has_prop(collision->a, EntityProp_Bullet))
+                {
+                    bullet = collision->a;
+                    target = collision->b;
+                }
+                if (g_entity_has_prop(collision->b, EntityProp_Bullet))
+                {
+                    bullet = collision->b;
+                    target = collision->a;
+                }
+
+                if (bullet)
+                {
+                    g_entity_enable_prop(bullet, EntityProp_MarkedForDeletion);
+                    target->health -= 10;
+                    if (target->health <= 0)
+                    {
+                        g_entity_enable_prop(target, EntityProp_MarkedForDeletion);
+                    }
+                }
+
                 ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+            }
+
+            /** editor - physics */
+            profiler_scope("editor - physics")
+            {
+                for (uint32 i = 0; i < collider_count; i++)
+                {
+                    ColliderInfo collider = colliders[i];
+                    draw_circle(collider.position, collider.radius, ColorRed400);
+                }
             }
         }
 
@@ -202,7 +276,7 @@ main(void)
         /** render sprites */
         profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing) for_each(entity, g_state->first_entity)
         {
-            if (g_entity_has_prop(entity, EntityProp_Sprite))
+            if (entity->sprite > 0)
             {
                 draw_sprite(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one());
             }
