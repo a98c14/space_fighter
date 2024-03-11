@@ -174,5 +174,6 @@ g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color 
     bullet->collider_type   = collider_type;
     bullet->collider_radius = 10;
     bullet->remaining_life  = 2;
+    bullet->damage          = 10;
     return bullet;
 }

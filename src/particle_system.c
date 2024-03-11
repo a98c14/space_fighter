@@ -46,11 +46,11 @@ ps_update(float32 dt)
         float32 t        = lifetime / particle->total_t;
 
         SpriteRenderRequest render_info = {0};
-        render_info.rotation            = 0;
+        render_info.rotation            = particle->rotation;
         render_info.layer               = particle->sort_layer;
+
         // TODO(selim): Add outline color to particle, the issue is only the text particles use it at the moment
         Color outline_color = {0};
-
         /** set color */
         if (particle->effects & PS_EffectFlagsColorAnimation)
         {
@@ -179,12 +179,13 @@ ps_particle_new_internal(PS_ParticleKind kind, Vec3 position, float32 duration, 
 }
 
 internal ParticleIndex
-ps_particle_animation(Vec3 position, AnimationIndex animation)
+ps_particle_animation(Vec3 position, AnimationIndex animation, float32 rotation)
 {
     float32      duration       = animation_length(ps_state->atlas->animations[animation]) * ps_state->animation_update_rate;
     uint64       particle_index = ps_particle_new_internal(PS_ParticleKindAnimation, position, duration, ps_state->default_pass, SORT_LAYER_INDEX_IN_GAME_EFFECTS);
     PS_Particle* p              = &ps_state->particle_buffer[particle_index % ps_state->particle_capacity];
     p->animation                = animation;
+    p->rotation                 = rotation;
     return particle_index;
 }
 
@@ -223,7 +224,7 @@ ps_particle_pixel_perfect_sprite(Vec3 position, SpriteIndex sprite, float32 dura
 internal ParticleIndex
 ps_particle_animation_delayed(Vec3 position, AnimationIndex animation, float32 delay)
 {
-    ParticleIndex particle = ps_particle_animation(position, animation);
+    ParticleIndex particle = ps_particle_animation(position, animation, 0);
     ps_set_delay(particle, delay);
     return particle;
 }

@@ -52,6 +52,7 @@ enum
 {
     EntityProp_RotateTowardsAim,
     EntityProp_RotateTowardsHeading,
+    EntityProp_SmoothMovement,
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
     EntityProp_SimpleAI,
@@ -87,6 +88,8 @@ struct GameEntity
     float32 health;
     float32 attack_rate;
     float32 t_attack;
+    float32 damage;
+    Vec2    bullet_spawn_offset;
 
     /** animation */
     float32    anim_scale_t;
@@ -94,6 +97,7 @@ struct GameEntity
 
     /** force */
     Vec2 force;
+    Vec2 direction;
 
     /** loot */
     IRange coin_on_death;

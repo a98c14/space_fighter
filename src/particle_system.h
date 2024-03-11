@@ -67,6 +67,7 @@ typedef struct
     SortLayerIndex sort_layer;
     PassIndex      pass;
     Vec4           starting_color;
+    float32        rotation;
 
     union
     {
@@ -117,7 +118,7 @@ internal void ps_render_group_add(PS_PassRenderGroup* pass_groups, PassIndex pas
 /** spawn functions */
 internal ParticleIndex ps_particle_new_internal(PS_ParticleKind kind, Vec3 position, float32 duration, PassIndex pass, SortLayerIndex sort_layer);
 internal ParticleIndex ps_particle_animation_delayed(Vec3 position, AnimationIndex animation, float32 delay);
-internal ParticleIndex ps_particle_animation(Vec3 position, AnimationIndex animation);
+internal ParticleIndex ps_particle_animation(Vec3 position, AnimationIndex animation, float32 rotation);
 internal ParticleIndex ps_particle_text(Vec3 position, String str, float32 duration, Color color, float32 size);
 internal ParticleIndex ps_particle_sprite(Vec3 position, SpriteIndex sprite, float32 duration);
 internal ParticleIndex ps_particle_pixel_perfect_sprite(Vec3 position, SpriteIndex sprite, float32 duration);

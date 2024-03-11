@@ -11,14 +11,17 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
-    GameEntity* player      = g_entity_alloc();
-    player->color           = ColorWhite;
-    player->scale           = vec2(1, 1);
-    player->speed           = 100;
-    player->sprite          = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate     = 0.3;
-    player->collider_type   = ColliderTypePlayerHitbox;
-    player->collider_radius = 20;
+    GameEntity* player          = g_entity_alloc();
+    player->color               = ColorWhite;
+    player->scale               = vec2(1, 1);
+    player->speed               = 120;
+    player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
+    player->attack_rate         = 0.3;
+    player->collider_type       = ColliderTypePlayerHitbox;
+    player->health              = 100;
+    player->collider_radius     = 20;
+    player->bullet_spawn_offset = vec2(0, 18);
+    g_entity_enable_prop(player, EntityProp_SmoothMovement);
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
 
@@ -64,7 +67,10 @@ main(void)
             if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
                 player->t_attack = player->attack_rate;
-                g_spawn_bullet(player->position, player->look_at, ColliderTypePlayerAttack, ColorYellow500, 12);
+
+                Vec2 bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
+                g_spawn_bullet(bullet_position, player->look_at, ColliderTypePlayerAttack, ColorYellow500, 12);
+                ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, player->rotation + 90);
             }
         }
 
@@ -131,7 +137,7 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                g_spawn_enemy(vec2(100, 100));
+                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
             }
         }
 
@@ -194,7 +200,7 @@ main(void)
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
-                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT);
+                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT, 0);
             }
         }
 
@@ -208,8 +214,15 @@ main(void)
         /** movement */
         profiler_scope("movement") for_each(entity, g_state->first_entity)
         {
-            Vec2 direction   = mul_vec2_f32(entity->heading, entity->speed * dt);
-            entity->position = add_vec2(entity->position, direction);
+            if (g_entity_has_prop(entity, EntityProp_SmoothMovement))
+            {
+                entity->direction = lerp_vec2(entity->direction, mul_vec2_f32(entity->heading, entity->speed * dt), 4 * dt);
+            }
+            else
+            {
+                entity->direction = mul_vec2_f32(entity->heading, entity->speed * dt);
+            }
+            entity->position = add_vec2(entity->position, entity->direction);
         }
 
         /** collision */
@@ -283,7 +296,7 @@ main(void)
                     }
                 }
 
-                ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET, 0);
             }
 
             /** editor - physics */
