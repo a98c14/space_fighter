@@ -11,13 +11,16 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
-    GameEntity* player  = g_entity_alloc();
-    player->color       = ColorWhite;
-    player->scale       = vec2(1, 1);
-    player->speed       = 100;
-    player->sprite      = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate = 0.3;
+    GameEntity* player      = g_entity_alloc();
+    player->color           = ColorWhite;
+    player->scale           = vec2(1, 1);
+    player->speed           = 100;
+    player->sprite          = SPRITE_GAME_SHIPS_RED_BEATLE;
+    player->attack_rate     = 0.3;
+    player->collider_type   = ColliderTypePlayerHitbox;
+    player->collider_radius = 20;
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
+    g_entity_enable_prop(player, EntityProp_Collider);
 
     GameEntity* enemy = g_spawn_enemy(vec2(100, 100));
 
@@ -238,8 +241,7 @@ main(void)
                     ColliderInfo a = colliders[i];
                     ColliderInfo b = colliders[j];
 
-                    // TODO(selim): create a lookup array for collision types
-                    bool32 can_intersect = (a.type == ColliderTypePlayerAttack && b.type == ColliderTypeEnemyHitbox) || (a.type == ColliderTypeEnemyHitbox && b.type == ColliderTypePlayerAttack);
+                    bool32 can_intersect = bitfield_is_set(g_state->collision_map[a.type], b.type) || bitfield_is_set(g_state->collision_map[b.type], a.type);
                     if (!can_intersect)
                         continue;
 

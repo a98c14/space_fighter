@@ -42,7 +42,8 @@ typedef enum
     ColliderTypeEnemyHitbox,
     ColliderTypePlayerHitbox,
     ColliderTypePlayerAttack,
-    ColliderTypeEnemyAttack
+    ColliderTypeEnemyAttack,
+    ColliderType_COUNT
 } ColliderType;
 
 /** entity */
@@ -65,6 +66,7 @@ enum
 
 typedef uint64            GameEntityIndex;
 typedef struct GameEntity GameEntity;
+
 struct GameEntity
 {
     /** metadata */
@@ -133,6 +135,9 @@ typedef struct
 
     MaterialIndex material_pass_default;
     MaterialIndex material_projectile;
+
+    /** physics */
+    BitField64 collision_map[ColliderType_COUNT];
 
     /** input */
     InputMouse input_mouse;

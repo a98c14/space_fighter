@@ -73,6 +73,12 @@ g_init()
 
     FontFaceIndex ibx_mono = font_load(string("ibx_mono"), string(ASSET_PATH "\\IBMPlexMono-Bold.ttf"), GlyphAtlasTypeFreeType);
     draw_activate_font(ibx_mono);
+
+    /** physics */
+    xassert(ColliderType_COUNT < 64, "There are more collider types than available");
+    bitfield_set(&g_state->collision_map[ColliderTypePlayerAttack], ColliderTypeEnemyHitbox);
+    bitfield_set(&g_state->collision_map[ColliderTypeEnemyAttack], ColliderTypePlayerHitbox);
+
     scratch_end(temp);
 }
 
