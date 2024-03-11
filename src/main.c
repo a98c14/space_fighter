@@ -60,20 +60,8 @@ main(void)
 
             if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
-                player->t_attack   = player->attack_rate;
-                GameEntity* bullet = g_entity_alloc();
-                g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
-                g_entity_enable_prop(bullet, EntityProp_Lifetime);
-                g_entity_enable_prop(bullet, EntityProp_Bullet);
-                g_entity_enable_prop(bullet, EntityProp_Collider);
-                bullet->position        = player->position;
-                bullet->heading         = player->look_at;
-                bullet->scale           = vec2(24, 24);
-                bullet->color           = ColorWhite;
-                bullet->speed           = 200;
-                bullet->collider_type   = ColliderTypePlayerAttack;
-                bullet->collider_radius = 10;
-                bullet->remaining_life  = 2;
+                player->t_attack = player->attack_rate;
+                g_spawn_bullet(player->position, player->look_at, ColliderTypePlayerAttack, ColorYellow500, 12);
             }
         }
 
@@ -98,10 +86,12 @@ main(void)
                 for (uint32 i = 0; i < coin_count; i++)
                 {
                     GameEntity* coin = g_entity_alloc();
-                    coin->animation  = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
-                    coin->position   = random_point_in_circle(entity->position, 30);
-                    coin->scale      = vec2(1, 1);
-                    coin->color      = ColorWhite;
+                    g_entity_enable_prop(coin, EntityProp_PullTowardsPlayer);
+                    coin->animation = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
+                    coin->force     = random_direction(20);
+                    coin->position  = entity->position;
+                    coin->scale     = vec2(1, 1);
+                    coin->color     = ColorWhite;
                 }
             }
 
@@ -152,6 +142,19 @@ main(void)
             entity->look_at = heading_to_vec2(entity->position, player->position);
         }
 
+        /** combat ai */
+        profiler_scope("combat ai") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_CombatAI))
+                continue;
+
+            if (entity->t_attack <= 0)
+            {
+                entity->t_attack   = entity->attack_rate;
+                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24);
+            }
+        }
+
         /** lifetime */
         profiler_scope("lifetime") for_each(entity, g_state->first_entity)
         {
@@ -176,6 +179,27 @@ main(void)
             {
                 entity->rotation = angle_vec2(entity->look_at) - 90;
             }
+        }
+
+        /** pull towards */
+        profiler_scope("pull towards player") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_PullTowardsPlayer))
+                continue;
+
+            entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, 1));
+            if (distsqr_vec2(entity->position, player->position) < 1000)
+            {
+                g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
+                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT);
+            }
+        }
+
+        /** apply force */
+        profiler_scope("force") for_each(entity, g_state->first_entity)
+        {
+            entity->force    = lerp_vec2(entity->force, vec2_zero(), dt);
+            entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, 10 * dt));
         }
 
         /** movement */
@@ -261,7 +285,7 @@ main(void)
             }
 
             /** editor - physics */
-            profiler_scope("editor - physics")
+            profiler_scope("editor - physics") if (g_state->editor_active)
             {
                 for (uint32 i = 0; i < collider_count; i++)
                 {
@@ -286,7 +310,7 @@ main(void)
         {
             if (!g_entity_has_prop(entity, EntityProp_Bullet))
                 continue;
-            draw_projectile(entity->position, entity->scale.x);
+            draw_projectile(entity->position, entity->scale.x, entity->color);
         }
 
         ShaderDataBasic basic_shader = {0};

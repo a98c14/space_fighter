@@ -54,6 +54,8 @@ enum
     EntityProp_Lifetime,
     EntityProp_MarkedForDeletion,
     EntityProp_SimpleAI,
+    EntityProp_CombatAI,
+    EntityProp_PullTowardsPlayer,
     EntityProp_Bullet,
     EntityProp_Player,
     EntityProp_Collider,
@@ -83,6 +85,13 @@ struct GameEntity
     float32 health;
     float32 attack_rate;
     float32 t_attack;
+
+    /** animation */
+    float32    anim_scale_t;
+    EasingType anim_scale_type;
+
+    /** force */
+    Vec2 force;
 
     /** loot */
     IRange coin_on_death;
@@ -158,10 +167,11 @@ typedef struct
     float32 fill_ratio;
     float32 slice_ratio;
 } ShaderDataProjectile;
-internal void draw_projectile(Vec2 pos, float32 radius);
+internal void draw_projectile(Vec2 pos, float32 radius, Color color);
 
 /** utils */
 internal GameEntity* g_spawn_enemy(Vec2 position);
+internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size);
 
 /** physics */
 typedef struct

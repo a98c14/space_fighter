@@ -118,13 +118,13 @@ g_entity_enable_prop(GameEntity* e, EntityProp prop)
 
 /** render */
 internal void
-draw_projectile(Vec2 pos, float32 radius)
+draw_projectile(Vec2 pos, float32 radius, Color color)
 {
     RenderKey key = render_key_new(d_state->ctx->view, d_state->ctx->sort_layer, d_state->ctx->pass, TEXTURE_INDEX_NULL, g_renderer->quad, g_state->material_projectile);
 
     ShaderDataProjectile shader_data = {0};
     shader_data.color                = color_v4(ColorWhite);
-    shader_data.outer_color          = color_v4(ColorRed500);
+    shader_data.outer_color          = color_v4(color);
     shader_data.slice_ratio          = 1;
     shader_data.fill_ratio           = 1;
     r_draw_single(key, transform_quad_aligned(pos, vec2(radius, radius)), &shader_data);
@@ -143,9 +143,30 @@ g_spawn_enemy(Vec2 position)
     result->sprite            = SPRITE_GAME_SHIPS_RANGER;
     result->collider_type     = ColliderTypeEnemyHitbox;
     result->collider_radius   = 26;
+    result->attack_rate       = 1;
     result->health            = 10;
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(result, EntityProp_SimpleAI);
     g_entity_enable_prop(result, EntityProp_Collider);
+    g_entity_enable_prop(result, EntityProp_CombatAI);
     return result;
+}
+
+internal GameEntity*
+g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size)
+{
+    GameEntity* bullet = g_entity_alloc();
+    g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
+    g_entity_enable_prop(bullet, EntityProp_Lifetime);
+    g_entity_enable_prop(bullet, EntityProp_Bullet);
+    g_entity_enable_prop(bullet, EntityProp_Collider);
+    bullet->position        = position;
+    bullet->heading         = direction;
+    bullet->scale           = vec2(size, size);
+    bullet->color           = color;
+    bullet->speed           = 200;
+    bullet->collider_type   = collider_type;
+    bullet->collider_radius = 10;
+    bullet->remaining_life  = 2;
+    return bullet;
 }
