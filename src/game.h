@@ -68,6 +68,7 @@ enum
 typedef uint64            GameEntityIndex;
 typedef struct GameEntity GameEntity;
 
+// TODO(selim): static data about entities can be moved to a configuration struct outside of entitiy list
 struct GameEntity
 {
     /** metadata */
@@ -84,13 +85,14 @@ struct GameEntity
     Vec2    scale;
     float32 rotation;
 
-    /** combat */ // TODO(selim): static data about entities can be moved to a configuration `struct` outside of
+    /** combat */
     float32 health;
     float32 attack_rate;
     float32 t_attack;
     float32 damage;
     Vec2    bullet_spawn_offset;
     float32 bullet_speed;
+    uint32  projectile_count;
 
     /** animation */
     float32    anim_scale_t;
@@ -121,6 +123,7 @@ struct GameEntity
 
     float32        t_animation_clock;
     AnimationIndex animation;
+    AnimationIndex on_delete_animation;
     uint32         frame;
 };
 
@@ -181,7 +184,7 @@ internal void draw_projectile(Vec2 pos, float32 radius, Color color);
 
 /** utils */
 internal GameEntity* g_spawn_enemy(Vec2 position);
-internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size);
+internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation);
 
 /** physics */
 typedef struct

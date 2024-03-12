@@ -16,10 +16,11 @@ main(void)
     player->scale               = vec2(1, 1);
     player->speed               = 120;
     player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate         = 0.3;
+    player->attack_rate         = 0.4;
     player->collider_type       = ColliderTypePlayerHitbox;
     player->health              = 100;
     player->collider_radius     = 20;
+    player->projectile_count    = 1;
     player->bullet_spawn_offset = vec2(0, 18);
     g_entity_enable_prop(player, EntityProp_Player);
     g_entity_enable_prop(player, EntityProp_SmoothMovement);
@@ -55,6 +56,10 @@ main(void)
             {
                 player_direction.y -= 1;
             }
+            if (input_key_pressed(g_state->window, GLFW_KEY_SPACE))
+            {
+                player_direction.y -= 1;
+            }
             player_direction     = norm_vec2_safe(player_direction);
             g_state->input_mouse = input_mouse_get(g_state->window, g_renderer->camera, g_state->input_mouse);
         }
@@ -63,15 +68,20 @@ main(void)
         {
             player->heading = player_direction;
             player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
-            draw_heading(player->position, player->heading, ColorWhite, 2);
 
             if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
-                player->t_attack = player->attack_rate;
-
-                Vec2 bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
-                g_spawn_bullet(bullet_position, player->look_at, ColliderTypePlayerAttack, ColorYellow500, 12);
-                ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, player->rotation + 90);
+                // TODO(selim):  move bullet firing code to separate place
+                player->t_attack        = player->attack_rate;
+                Vec2    bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
+                float32 starting_angle  = angle_vec2(player->look_at) - (uint32)(player->projectile_count / 2) * 15;
+                for (uint32 i = 0; i < player->projectile_count; i++)
+                {
+                    float32 angle     = starting_angle + i * 15;
+                    Vec2    direction = rotate_vec2(vec2(1, 0), angle);
+                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 200, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                    ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
+                }
                 post_processing_add_shake(2);
             }
         }
@@ -90,6 +100,11 @@ main(void)
             if (!g_entity_has_prop(entity, EntityProp_MarkedForDeletion))
                 continue;
 
+            if (entity->on_delete_animation > 0)
+            {
+                ps_particle_animation(vec3_xy(entity->position), entity->on_delete_animation, random_between_f32(-180, 180));
+            }
+
             bool32 drops_coin = entity->coin_on_death.min > 0 || entity->coin_on_death.max > 0;
             if (drops_coin)
             {
@@ -98,15 +113,27 @@ main(void)
                 {
                     GameEntity* coin = g_entity_alloc();
                     g_entity_enable_prop(coin, EntityProp_PullTowardsPlayer);
-                    coin->animation = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
-                    coin->force     = random_direction(20);
-                    coin->position  = entity->position;
-                    coin->scale     = vec2(1, 1);
-                    coin->color     = ColorWhite;
+                    coin->animation           = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
+                    coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
+                    coin->force               = random_direction(20);
+                    coin->position            = entity->position;
+                    coin->scale               = vec2(1, 1);
+                    coin->color               = ColorWhite;
                 }
             }
 
             g_entity_free(entity);
+        }
+
+        /** enemy spawner */
+        profiler_scope("enemy spawner")
+        {
+            g_state->t_spawn -= dt;
+            if (g_state->t_spawn < 0)
+            {
+                g_state->t_spawn = 2;
+                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
+            }
         }
 
         /** animation */
@@ -132,17 +159,6 @@ main(void)
             entity->t_attack = max(0, entity->t_attack - dt);
         }
 
-        /** enemy spawner */
-        profiler_scope("enemy spawner")
-        {
-            g_state->t_spawn -= dt;
-            if (g_state->t_spawn < 0)
-            {
-                g_state->t_spawn = 2;
-                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
-            }
-        }
-
         /** simple ai */
         profiler_scope("simple ai") for_each(entity, g_state->first_entity)
         {
@@ -162,7 +178,7 @@ main(void)
             if (entity->t_attack <= 0)
             {
                 entity->t_attack   = entity->attack_rate;
-                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24);
+                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24, 100, ANIMATION_GAME_VFX_HIT_EFFECT_ENEMY_BULLET);
             }
         }
 
@@ -202,7 +218,6 @@ main(void)
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
-                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT, random_between_f32(-180, 180));
             }
         }
 
@@ -303,7 +318,6 @@ main(void)
                 {
                     post_processing_add_aberration();
                 }
-                ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET, 0);
             }
 
             /** editor - physics */

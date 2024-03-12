@@ -150,7 +150,7 @@ g_spawn_enemy(Vec2 position)
     result->collider_type     = ColliderTypeEnemyHitbox;
     result->collider_radius   = 26;
     result->attack_rate       = 1;
-    result->health            = 10;
+    result->health            = 50;
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(result, EntityProp_SimpleAI);
     g_entity_enable_prop(result, EntityProp_Collider);
@@ -159,21 +159,23 @@ g_spawn_enemy(Vec2 position)
 }
 
 internal GameEntity*
-g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size)
+g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation)
 {
     GameEntity* bullet = g_entity_alloc();
     g_entity_enable_prop(bullet, EntityProp_RotateTowardsHeading);
     g_entity_enable_prop(bullet, EntityProp_Lifetime);
     g_entity_enable_prop(bullet, EntityProp_Bullet);
     g_entity_enable_prop(bullet, EntityProp_Collider);
-    bullet->position        = position;
-    bullet->heading         = direction;
-    bullet->scale           = vec2(size, size);
-    bullet->color           = color;
-    bullet->speed           = 200;
-    bullet->collider_type   = collider_type;
-    bullet->collider_radius = 10;
-    bullet->remaining_life  = 2;
-    bullet->damage          = 10;
+
+    bullet->position            = position;
+    bullet->heading             = direction;
+    bullet->scale               = vec2(size, size);
+    bullet->color               = color;
+    bullet->speed               = speed;
+    bullet->collider_type       = collider_type;
+    bullet->collider_radius     = 10;
+    bullet->remaining_life      = 2;
+    bullet->damage              = 10;
+    bullet->on_delete_animation = on_delete_animation;
     return bullet;
 }
