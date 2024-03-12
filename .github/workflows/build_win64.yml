@@ -83,7 +83,7 @@ jobs:
         New-Item -itemType Directory -Force -Path ${{ env.output_bin_path }};
         (Get-Content ${{ env.source_path }}) -replace "version-0.0.0", "version-${{ env.version }}" | Set-Content ${{ env.source_path }};
         cl /O2 /Zi /nologo /Fd:${{ env.pdb_path }} /Fo:"${{ env.output_bin_path }}\" /nologo /DSTB_IMAGE_IMPLEMENTATION `
-          .\opus\lib\glfw3dll.lib .\opus\lib\glfw3.lib .\opus\lib\gl.obj opengl32.lib `
+          .\opus\lib\freetype.lib .\opus\lib\glfw3dll.lib .\opus\lib\glfw3.lib .\opus\lib\gl.obj opengl32.lib `
           /I".\include" /I".\opus\include" /I".\opus\src" ${{ env.source_path }} `
           /link /debug:full /pdb:${{ env.pdb_path }} /out:${{ env.exe_path }};
         
