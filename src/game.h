@@ -84,12 +84,13 @@ struct GameEntity
     Vec2    scale;
     float32 rotation;
 
-    /** combat */
+    /** combat */ // TODO(selim): static data about entities can be moved to a configuration `struct` outside of
     float32 health;
     float32 attack_rate;
     float32 t_attack;
     float32 damage;
     Vec2    bullet_spawn_offset;
+    float32 bullet_speed;
 
     /** animation */
     float32    anim_scale_t;

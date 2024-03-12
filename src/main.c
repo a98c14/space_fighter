@@ -21,6 +21,7 @@ main(void)
     player->health              = 100;
     player->collider_radius     = 20;
     player->bullet_spawn_offset = vec2(0, 18);
+    g_entity_enable_prop(player, EntityProp_Player);
     g_entity_enable_prop(player, EntityProp_SmoothMovement);
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
@@ -71,6 +72,7 @@ main(void)
                 Vec2 bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
                 g_spawn_bullet(bullet_position, player->look_at, ColliderTypePlayerAttack, ColorYellow500, 12);
                 ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, player->rotation + 90);
+                post_processing_add_shake(2);
             }
         }
 
@@ -200,7 +202,7 @@ main(void)
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
-                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT, 0);
+                ps_particle_animation(vec3_xy(entity->position), ANIMATION_GAME_VFX_POWER_UP_PICKUP_EFFECT, random_between_f32(-180, 180));
             }
         }
 
@@ -275,6 +277,7 @@ main(void)
 
                 GameEntity* bullet = 0;
                 GameEntity* target = 0;
+
                 if (g_entity_has_prop(collision->a, EntityProp_Bullet))
                 {
                     bullet = collision->a;
@@ -296,6 +299,10 @@ main(void)
                     }
                 }
 
+                if (g_entity_has_prop(target, EntityProp_Player))
+                {
+                    post_processing_add_aberration();
+                }
                 ps_particle_animation(vec3_xy(collision->position), ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET, 0);
             }
 
@@ -311,6 +318,8 @@ main(void)
         }
 
         ps_update(dt);
+        post_processing_update(g_state->time);
+        post_processing_move_camera(vec2_zero(), g_state->time);
 
         /** render sprites */
         profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing) for_each(entity, g_state->first_entity)
