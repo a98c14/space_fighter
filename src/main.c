@@ -1,3 +1,6 @@
+#ifndef VERSION_NUMBER
+#define VERSION_NUMBER "version-0.0.0"
+#endif
 #include "game.h"
 
 #include "game.c"
@@ -33,6 +36,7 @@ main(void)
     while (!window_should_close(g_state->window))
     {
         arena_reset(g_state->frame_arena);
+        draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 12, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
         if (input_key_pressed(g_state->window, GLFW_KEY_RIGHT_BRACKET))
             break;
