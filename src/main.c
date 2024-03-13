@@ -19,18 +19,20 @@ main(void)
     player->scale               = vec2(1, 1);
     player->speed               = 120;
     player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate         = 0.4;
+    player->attack_rate         = 0.1;
     player->collider_type       = ColliderTypePlayerHitbox;
     player->health              = 100;
     player->collider_radius     = 20;
     player->projectile_count    = 1;
     player->bullet_spawn_offset = vec2(0, 18);
+    player->look_at             = vec2(1, 0);
     g_entity_enable_prop(player, EntityProp_Player);
     g_entity_enable_prop(player, EntityProp_SmoothMovement);
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
 
-    GameEntity* enemy = g_spawn_enemy(vec2(100, 100));
+    GameEntity* enemy     = g_spawn_enemy(vec2(100, 100));
+    bool32      is_paused = false;
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -41,37 +43,44 @@ main(void)
         if (input_key_pressed(g_state->window, GLFW_KEY_RIGHT_BRACKET))
             break;
 
+        float32 dt = g_state->time.dt;
+        if (is_paused)
+            dt = 0;
+
         /** gather input */
-        Vec2 player_direction = vec2_zero();
+        bool32 gas = false;
         {
-            if (input_key_pressed(g_state->window, GLFW_KEY_A))
-            {
-                player_direction.x -= 1;
-            }
-            if (input_key_pressed(g_state->window, GLFW_KEY_D))
-            {
-                player_direction.x += 1;
-            }
-            if (input_key_pressed(g_state->window, GLFW_KEY_W))
-            {
-                player_direction.y += 1;
-            }
-            if (input_key_pressed(g_state->window, GLFW_KEY_S))
-            {
-                player_direction.y -= 1;
-            }
             if (input_key_pressed(g_state->window, GLFW_KEY_SPACE))
             {
-                player_direction.y -= 1;
+                gas = true;
             }
-            player_direction     = norm_vec2_safe(player_direction);
+
+            float32 angular_change = dt * 8;
+            if (input_key_pressed(g_state->window, GLFW_KEY_A))
+            {
+                player->angular_speed = lerp_f32(player->angular_speed, 200, angular_change);
+            }
+            else if (input_key_pressed(g_state->window, GLFW_KEY_D))
+            {
+                player->angular_speed = lerp_f32(player->angular_speed, -200, angular_change);
+            }
+            else
+            {
+                player->angular_speed = lerp_f32(player->angular_speed, 0, angular_change);
+            }
+            player->angular_speed *= gas ? 0.8 : 1;
+
             g_state->input_mouse = input_mouse_get(g_state->window, g_renderer->camera, g_state->input_mouse);
         }
 
         /** apply input */
         {
-            player->heading = player_direction;
-            player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
+            // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
+            player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
+            if (gas > 0)
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 10));
+
+            player->force = clamp_vec2_length(0, player->force, 400);
 
             if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
@@ -83,14 +92,13 @@ main(void)
                 {
                     float32 angle     = starting_angle + i * 15;
                     Vec2    direction = rotate_vec2(vec2(1, 0), angle);
-                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 200, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 500, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
                     ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
                 }
                 post_processing_add_shake(2);
             }
         }
 
-        float32        dt             = g_state->time.dt;
         ShaderDataText shader_data    = {0};
         shader_data.color             = d_color_white;
         shader_data.thickness         = d_default_text_thickness;
@@ -189,6 +197,7 @@ main(void)
         /** lifetime */
         profiler_scope("lifetime") for_each(entity, g_state->first_entity)
         {
+            entity->t_alive += dt;
             if (!g_entity_has_prop(entity, EntityProp_Lifetime))
                 continue;
 
@@ -218,7 +227,8 @@ main(void)
             if (!g_entity_has_prop(entity, EntityProp_PullTowardsPlayer))
                 continue;
 
-            entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, 1));
+            entity->force = lerp_vec2(entity->force, vec2_zero(), dt);
+            entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, entity->t_alive));
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
@@ -228,8 +238,7 @@ main(void)
         /** apply force */
         profiler_scope("force") for_each(entity, g_state->first_entity)
         {
-            entity->force    = lerp_vec2(entity->force, vec2_zero(), dt);
-            entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, 10 * dt));
+            entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, dt));
         }
 
         /** movement */
@@ -337,10 +346,10 @@ main(void)
 
         ps_update(dt);
         post_processing_update(g_state->time);
-        post_processing_move_camera(vec2_zero(), g_state->time);
+        post_processing_move_camera(player->position, g_state->time);
 
         /** render sprites */
-        profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_post_processing) for_each(entity, g_state->first_entity)
+        profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect) for_each(entity, g_state->first_entity)
         {
             if (entity->sprite > 0)
             {

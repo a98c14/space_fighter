@@ -28,7 +28,7 @@ g_init()
     /** pipelines */
     const float32    pp_res_multiplier            = 3.0f;
     FrameBufferIndex post_processing_frame_buffer = r_frame_buffer_new(g_renderer, g_renderer->world_width * pp_res_multiplier, g_renderer->world_height * pp_res_multiplier, GL_LINEAR, ColorInvisible);
-    FrameBufferIndex pixel_perfect_frame_buffer   = r_frame_buffer_new(g_renderer, g_renderer->world_width, g_renderer->world_height, GL_LINEAR, ColorInvisible);
+    FrameBufferIndex pixel_perfect_frame_buffer   = r_frame_buffer_new(g_renderer, g_renderer->world_width, g_renderer->world_height, GL_NEAREST, ColorInvisible);
 
     R_PipelineConfiguration* config = r_pipeline_config_new(g_state->frame_arena);
     g_state->pass_default           = r_pipeline_config_add_pass(config, FRAME_BUFFER_INDEX_DEFAULT);
@@ -40,7 +40,7 @@ g_init()
     draw_context_init(persistent_arena, g_state->frame_arena, g_renderer, g_state->pass_default);
     StringList sprite_texture_paths = {0};
     string_list_push(temp.arena, &sprite_texture_paths, string(ASSET_PATH "\\textures\\game.png"));
-    TextureIndex sprite_texture_array = texture_array_from_file(temp.arena, g_renderer, sprite_texture_paths, 0, 1);
+    TextureIndex sprite_texture_array = texture_array_from_file(temp.arena, g_renderer, sprite_texture_paths, 1, 1);
     SpriteAtlas* atlas                = sprite_atlas_new(persistent_arena, sprite_texture_array, Animations, Sprites, texture_index_map, array_count(Animations), array_count(Sprites));
     renderer_load_sprite_atlas(g_renderer, atlas);
     draw_context_activate_atlas(atlas);

@@ -113,9 +113,11 @@ struct GameEntity
     Vec2    heading;
     Vec2    look_at;
     float32 speed;
+    float32 angular_speed;
 
     /** lifetime */
     float32 remaining_life;
+    float32 t_alive;
 
     /** render info */
     Color       color;
