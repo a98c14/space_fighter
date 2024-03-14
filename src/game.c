@@ -4,8 +4,6 @@ internal void
 g_init()
 {
     /** base */
-    ThreadContext tctx;
-    tctx_init_and_equip(&tctx);
     logger_init();
     random_init(0x381927afau);
 
@@ -126,7 +124,7 @@ g_entity_enable_prop(GameEntity* e, EntityProp prop)
 internal void
 draw_projectile(Vec2 pos, float32 radius, Color color)
 {
-    RenderKey key = render_key_new(d_state->ctx->view, d_state->ctx->sort_layer, d_state->ctx->pass, TEXTURE_INDEX_NULL, g_renderer->quad, g_state->material_projectile);
+    RenderKey key = render_key_new_default(d_state->ctx->view, d_state->ctx->sort_layer, d_state->ctx->pass, TEXTURE_INDEX_NULL, g_renderer->quad, g_state->material_projectile);
 
     ShaderDataProjectile shader_data = {0};
     shader_data.color                = color_v4(ColorWhite);

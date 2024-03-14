@@ -11,6 +11,8 @@
 int
 main(void)
 {
+    ThreadContext tctx;
+    tctx_init_and_equip(&tctx);
     g_init();
     const uint32 font_size = 18;
 
@@ -31,8 +33,7 @@ main(void)
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
 
-    GameEntity* enemy     = g_spawn_enemy(vec2(100, 100));
-    bool32      is_paused = false;
+    bool32 is_paused = false;
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -137,6 +138,22 @@ main(void)
             g_entity_free(entity);
         }
 
+        /** draw trail */
+        profiler_scope("draw trail")
+        {
+            Vec2 points[] = {
+                {.x = 0,  .y = 0 },
+                {.x = 0,  .y = 10},
+                {.x = 10, .y = 0 },
+                {.x = 10, .y = 10},
+                {.x = 20, .y = 0 },
+                {.x = 20, .y = 10},
+                {.x = 30, .y = 0 },
+            };
+
+            draw_trail(points, array_count(points), ColorWhite);
+        }
+
         /** enemy spawner */
         profiler_scope("enemy spawner")
         {
@@ -144,7 +161,7 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
+                // g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
             }
         }
 
