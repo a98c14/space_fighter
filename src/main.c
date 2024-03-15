@@ -35,6 +35,11 @@ main(void)
 
     bool32 is_paused = false;
 
+    int32 trail_count             = 0;
+    int32 test_trail_index        = 0;
+    Vec2  test_trail_buffer[16]   = {0};
+    Vec2  test_trail_buffer_2[16] = {0};
+
     /* main loop */
     while (!window_should_close(g_state->window))
     {
@@ -138,22 +143,6 @@ main(void)
             g_entity_free(entity);
         }
 
-        /** draw trail */
-        profiler_scope("draw trail")
-        {
-            Vec2 points[] = {
-                {.x = 0,  .y = 0 },
-                {.x = 0,  .y = 10},
-                {.x = 10, .y = 0 },
-                {.x = 10, .y = 10},
-                {.x = 20, .y = 0 },
-                {.x = 20, .y = 10},
-                {.x = 30, .y = 0 },
-            };
-
-            draw_trail(points, array_count(points), ColorWhite);
-        }
-
         /** enemy spawner */
         profiler_scope("enemy spawner")
         {
@@ -161,7 +150,7 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                // g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
+                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
             }
         }
 
@@ -358,6 +347,24 @@ main(void)
                     ColliderInfo collider = colliders[i];
                     draw_circle(collider.position, collider.radius, ColorRed400);
                 }
+            }
+        }
+
+        trail_count                                  = min(trail_count + 1, array_count(test_trail_buffer));
+        Vec2 normal                                  = vec2(-player->look_at.y, player->look_at.x);
+        test_trail_buffer[(test_trail_index) % 16]   = add_vec2(player->position, mul_vec2_f32(normal, 12));
+        test_trail_buffer_2[(test_trail_index) % 16] = add_vec2(player->position, mul_vec2_f32(normal, -12));
+        test_trail_index                             = (test_trail_index + 1) % 16;
+
+        /** draw trail */
+        profiler_scope("draw trail")
+        {
+            draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
+            {
+                VertexBuffer* trail = draw_util_generate_trail_vertices_fast(g_state->frame_arena, test_trail_buffer, trail_count, test_trail_index, 0.2, 0.8);
+                draw_trail(trail->v, trail->count, ColorWhite, ColorInvisibleWhite);
+                VertexBuffer* trail2 = draw_util_generate_trail_vertices_fast(g_state->frame_arena, test_trail_buffer_2, trail_count, test_trail_index, 0.2, 0.8);
+                draw_trail(trail2->v, trail2->count, ColorWhite, ColorInvisibleWhite);
             }
         }
 

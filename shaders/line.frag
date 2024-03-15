@@ -35,7 +35,7 @@ in vec2 v_tex_coord;
 out vec4 color;
 
 void main() {
-    float softness = 2;
+    float softness = 1;
     vec2 uv = v_tex_coord;
     uv = uv * 2.0 - 1.0;
     uv = abs(uv);

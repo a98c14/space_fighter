@@ -21,10 +21,10 @@
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080
-#define WORLD_WIDTH   960
-#define WORLD_HEIGHT  540
-// #define WORLD_WIDTH  640
-// #define WORLD_HEIGHT 360
+// #define WORLD_WIDTH   960
+// #define WORLD_HEIGHT  540
+#define WORLD_WIDTH  640
+#define WORLD_HEIGHT 360
 
 #define SORT_LAYER_INDEX_GROUND             2
 #define SORT_LAYER_INDEX_SHADOW             3
