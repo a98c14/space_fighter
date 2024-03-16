@@ -35,10 +35,12 @@ main(void)
 
     bool32 is_paused = false;
 
-    int32 trail_count             = 0;
-    int32 test_trail_index        = 0;
-    Vec2  test_trail_buffer[16]   = {0};
-    Vec2  test_trail_buffer_2[16] = {0};
+    Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
+    Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
+    trail_set_color(left_wing_trail, ColorWhite, ColorInvisibleWhite);
+    trail_set_width(left_wing_trail, 1.5, 0.5);
+    trail_set_color(right_wing_trail, ColorWhite, ColorInvisibleWhite);
+    trail_set_width(right_wing_trail, 1.5, 0.5);
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -350,22 +352,15 @@ main(void)
             }
         }
 
-        trail_count                                  = min(trail_count + 1, array_count(test_trail_buffer));
-        Vec2 normal                                  = vec2(-player->look_at.y, player->look_at.x);
-        test_trail_buffer[(test_trail_index) % 16]   = add_vec2(player->position, mul_vec2_f32(normal, 12));
-        test_trail_buffer_2[(test_trail_index) % 16] = add_vec2(player->position, mul_vec2_f32(normal, -12));
-        test_trail_index                             = (test_trail_index + 1) % 16;
+        Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
+        trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
+        trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
 
         /** draw trail */
-        profiler_scope("draw trail")
+        profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
         {
-            draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
-            {
-                VertexBuffer* trail = draw_util_generate_trail_vertices_fast(g_state->frame_arena, test_trail_buffer, trail_count, test_trail_index, 0.2, 0.8);
-                draw_trail(trail->v, trail->count, ColorWhite, ColorInvisibleWhite);
-                VertexBuffer* trail2 = draw_util_generate_trail_vertices_fast(g_state->frame_arena, test_trail_buffer_2, trail_count, test_trail_index, 0.2, 0.8);
-                draw_trail(trail2->v, trail2->count, ColorWhite, ColorInvisibleWhite);
-            }
+            trail_draw(left_wing_trail);
+            trail_draw(right_wing_trail);
         }
 
         ps_update(dt);
