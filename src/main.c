@@ -47,11 +47,11 @@ main(void)
 
         g_state->background_objects = arena_push_array_zero(g_state->persistent_arena, BackgroundObject, 256);
         const SpriteIndex stars[]   = {
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_0,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_1,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_2,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_3,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_4,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_0,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_1,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_2,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_3,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_4,
         };
 
         for (uint32 i = 0; i < 20; i++)
@@ -59,11 +59,11 @@ main(void)
             g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.03, .position = vec2(random_between_f32(-400, 400), random_between_f32(-150, 150)), .rotation = random_between_f32(-180, 180), .sprite = stars[random_between_i32(0, array_count(stars))]};
         }
 
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_6};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -100), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_7};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(150, -60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_8};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_9};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_5};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_NEBULA_0};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -100), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_NEBULA_1};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(150, -60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_0};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_1};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_2};
     }
 
     /* main loop */
