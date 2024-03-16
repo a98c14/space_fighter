@@ -11,6 +11,8 @@
 int
 main(void)
 {
+    ThreadContext tctx;
+    tctx_init_and_equip(&tctx);
     g_init();
     const uint32 font_size = 18;
 
@@ -31,8 +33,14 @@ main(void)
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
 
-    GameEntity* enemy     = g_spawn_enemy(vec2(100, 100));
-    bool32      is_paused = false;
+    bool32 is_paused = false;
+
+    Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
+    Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
+    trail_set_color(left_wing_trail, ColorWhite, ColorInvisibleWhite);
+    trail_set_width(left_wing_trail, 1.5, 0.5);
+    trail_set_color(right_wing_trail, ColorWhite, ColorInvisibleWhite);
+    trail_set_width(right_wing_trail, 1.5, 0.5);
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -342,6 +350,17 @@ main(void)
                     draw_circle(collider.position, collider.radius, ColorRed400);
                 }
             }
+        }
+
+        Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
+        trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
+        trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
+
+        /** draw trail */
+        profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
+        {
+            trail_draw(left_wing_trail);
+            trail_draw(right_wing_trail);
         }
 
         ps_update(dt);
