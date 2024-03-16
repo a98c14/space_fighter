@@ -65,6 +65,14 @@ enum
     EntityProp_COUNT
 };
 
+typedef struct
+{
+    SpriteIndex sprite;
+    Vec2        position;
+    float32     parallax_scale;
+    float32     rotation;
+} BackgroundObject;
+
 typedef uint64            GameEntityIndex;
 typedef struct GameEntity GameEntity;
 
@@ -145,6 +153,11 @@ typedef struct
 
     MaterialIndex material_pass_default;
     MaterialIndex material_projectile;
+
+    Vec2 camera_position;
+
+    uint64            background_object_count;
+    BackgroundObject* background_objects;
 
     /** physics */
     BitField64 collision_map[ColliderType_COUNT];
