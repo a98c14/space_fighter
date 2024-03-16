@@ -246,6 +246,7 @@ main(void)
         /** apply force */
         profiler_scope("force") for_each(entity, g_state->first_entity)
         {
+            entity->force    = add_vec2(entity->force, mul_vec2_f32(entity->force, -dt));
             entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, dt));
         }
 
