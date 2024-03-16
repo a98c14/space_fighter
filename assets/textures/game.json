@@ -1,71 +1,8 @@
 {"frames": [
 
 {
-	"filename": "celestial_objects/celestial_object_0.png",
-	"frame": {"x":1,"y":1,"w":30,"h":24},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":30,"h":24},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_1.png",
-	"frame": {"x":33,"y":1,"w":37,"h":29},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":37,"h":29},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_2.png",
-	"frame": {"x":72,"y":1,"w":24,"h":15},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":24,"h":15},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_3.png",
-	"frame": {"x":98,"y":1,"w":24,"h":29},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":24,"h":29},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_4.png",
-	"frame": {"x":124,"y":1,"w":25,"h":20},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":25,"h":20},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_5.png",
-	"frame": {"x":151,"y":1,"w":44,"h":26},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":44,"h":26},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_6.png",
-	"frame": {"x":197,"y":1,"w":149,"h":110},
-	"rotated": false,
-	"trimmed": true,
-	"spriteSourceSize": {"x":0,"y":0,"w":149,"h":110},
-	"sourceSize": {"w":162,"h":114},
-	"pivot": {"x":0.5,"y":0.5}
-},
-{
-	"filename": "celestial_objects/celestial_object_7.png",
-	"frame": {"x":348,"y":1,"w":152,"h":90},
+	"filename": "celestial_objects/nebula_0.png",
+	"frame": {"x":1,"y":1,"w":152,"h":90},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":0,"y":0,"w":152,"h":90},
@@ -73,8 +10,26 @@
 	"pivot": {"x":0.5,"y":0.5}
 },
 {
-	"filename": "celestial_objects/celestial_object_8.png",
-	"frame": {"x":502,"y":1,"w":54,"h":38},
+	"filename": "celestial_objects/nebula_1.png",
+	"frame": {"x":155,"y":1,"w":149,"h":110},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":149,"h":110},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/planet_0.png",
+	"frame": {"x":306,"y":1,"w":44,"h":26},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":44,"h":26},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/planet_1.png",
+	"frame": {"x":352,"y":1,"w":54,"h":38},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":0,"y":0,"w":54,"h":38},
@@ -82,11 +37,56 @@
 	"pivot": {"x":0.5,"y":0.5}
 },
 {
-	"filename": "celestial_objects/celestial_object_9.png",
-	"frame": {"x":558,"y":1,"w":69,"h":35},
+	"filename": "celestial_objects/planet_2.png",
+	"frame": {"x":408,"y":1,"w":69,"h":35},
 	"rotated": false,
 	"trimmed": true,
 	"spriteSourceSize": {"x":0,"y":0,"w":69,"h":35},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/star_0.png",
+	"frame": {"x":479,"y":1,"w":30,"h":24},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":30,"h":24},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/star_1.png",
+	"frame": {"x":511,"y":1,"w":37,"h":29},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":37,"h":29},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/star_2.png",
+	"frame": {"x":550,"y":1,"w":24,"h":15},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":24,"h":15},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/star_3.png",
+	"frame": {"x":576,"y":1,"w":24,"h":29},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":24,"h":29},
+	"sourceSize": {"w":162,"h":114},
+	"pivot": {"x":0.5,"y":0.5}
+},
+{
+	"filename": "celestial_objects/star_4.png",
+	"frame": {"x":602,"y":1,"w":25,"h":20},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":0,"w":25,"h":20},
 	"sourceSize": {"w":162,"h":114},
 	"pivot": {"x":0.5,"y":0.5}
 },
@@ -916,6 +916,6 @@
 	"format": "RGBA8888",
 	"size": {"w":2048,"h":2048},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:e4c9c0c7b4d7c7b36bc9940f94656765:9d78bdf1d5767cc2568597dca4502298:fc2835210f98bae8e8c1b7f0a84c9321$"
+	"smartupdate": "$TexturePacker:SmartUpdate:21d46950a03c597927d9090b35bd0210:aecc3c228320bb4272772026e3469b7d:fc2835210f98bae8e8c1b7f0a84c9321$"
 }
 }
