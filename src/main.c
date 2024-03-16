@@ -37,10 +37,34 @@ main(void)
 
     Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
     Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
-    trail_set_color(left_wing_trail, ColorWhite, ColorInvisibleWhite);
-    trail_set_width(left_wing_trail, 1.5, 0.5);
-    trail_set_color(right_wing_trail, ColorWhite, ColorInvisibleWhite);
-    trail_set_width(right_wing_trail, 1.5, 0.5);
+    trail_set_color(left_wing_trail, ColorWhite, ColorWhite);
+    trail_set_width(left_wing_trail, 0.8, 0);
+    trail_set_color(right_wing_trail, ColorWhite, ColorWhite);
+    trail_set_width(right_wing_trail, 0.8, 0);
+
+    /** setup background objects */
+    {
+
+        g_state->background_objects = arena_push_array_zero(g_state->persistent_arena, BackgroundObject, 256);
+        const SpriteIndex stars[]   = {
+            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_0,
+            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_1,
+            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_2,
+            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_3,
+            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_4,
+        };
+
+        for (uint32 i = 0; i < 20; i++)
+        {
+            g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.03, .position = vec2(random_between_f32(-400, 400), random_between_f32(-150, 150)), .rotation = random_between_f32(-180, 180), .sprite = stars[random_between_i32(0, array_count(stars))]};
+        }
+
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_6};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -100), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_7};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(150, -60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_8};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_9};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_5};
+    }
 
     /* main loop */
     while (!window_should_close(g_state->window))
@@ -100,7 +124,7 @@ main(void)
                 {
                     float32 angle     = starting_angle + i * 15;
                     Vec2    direction = rotate_vec2(vec2(1, 0), angle);
-                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 500, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 430, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
                     ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
                 }
                 post_processing_add_shake(2);
@@ -365,7 +389,18 @@ main(void)
 
         ps_update(dt);
         post_processing_update(g_state->time);
-        post_processing_move_camera(player->position, g_state->time);
+        g_state->camera_position = lerp_vec2(g_state->camera_position, player->position, 8 * dt);
+        post_processing_move_camera(g_state->camera_position, g_state->time);
+
+        /** background */
+        profiler_scope("background") draw_scope(SORT_LAYER_INDEX_GROUND, ViewTypeWorld, g_state->pass_post_processing)
+        {
+            for (uint32 i = 0; i < g_state->background_object_count; i++)
+            {
+                BackgroundObject obj = g_state->background_objects[i];
+                draw_sprite(add_vec2(div_vec2_f32(g_state->camera_position, obj.parallax_scale), obj.position), 1, obj.rotation, obj.sprite, vec2_one());
+            }
+        }
 
         /** render sprites */
         profiler_scope("render sprites") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect) for_each(entity, g_state->first_entity)
