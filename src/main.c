@@ -37,13 +37,10 @@ main(void)
 
     Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
     Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
-    Trail* jet_trail        = trail_new(g_state->persistent_arena, 12);
-    trail_set_color(left_wing_trail, ColorWhite, ColorInvisibleWhite);
-    trail_set_width(left_wing_trail, 1, 0.5);
-    trail_set_color(jet_trail, ColorBlue800, ColorInvisibleWhite);
-    trail_set_width(jet_trail, 4, 0.5);
-    trail_set_color(right_wing_trail, ColorWhite, ColorInvisibleWhite);
-    trail_set_width(right_wing_trail, 1, 0.5);
+    trail_set_color(left_wing_trail, ColorWhite, ColorWhite);
+    trail_set_width(left_wing_trail, 0.8, 0);
+    trail_set_color(right_wing_trail, ColorWhite, ColorWhite);
+    trail_set_width(right_wing_trail, 0.8, 0);
 
     /** setup background objects */
     {
@@ -382,14 +379,12 @@ main(void)
         Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
         trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
         trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
-        trail_push_position(jet_trail, player->position);
 
         /** draw trail */
         profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
         {
             trail_draw(left_wing_trail);
             trail_draw(right_wing_trail);
-            trail_draw(jet_trail);
         }
 
         ps_update(dt);
