@@ -109,12 +109,21 @@ main(void)
                 gas = true;
             }
 
+            if (input_key_pressed(g_state->window, GLFW_KEY_W))
+            {
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 200 * dt));
+            }
+            if (input_key_pressed(g_state->window, GLFW_KEY_S))
+            {
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -200 * dt));
+            }
+
             float32 angular_change = dt * 8;
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
                 player->angular_speed = lerp_f32(player->angular_speed, 250, angular_change);
             }
-            else if (input_key_pressed(g_state->window, GLFW_KEY_D))
+            if (input_key_pressed(g_state->window, GLFW_KEY_D))
             {
                 player->angular_speed = lerp_f32(player->angular_speed, -250, angular_change);
             }
