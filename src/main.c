@@ -119,19 +119,20 @@ main(void)
             }
 
             float32 angular_change = dt * 8;
+            float32 angular_speed  = 400;
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
-                player->angular_speed = lerp_f32(player->angular_speed, 250, angular_change);
+                player->angular_speed = lerp_f32(player->angular_speed, angular_speed, angular_change);
             }
             if (input_key_pressed(g_state->window, GLFW_KEY_D))
             {
-                player->angular_speed = lerp_f32(player->angular_speed, -250, angular_change);
+                player->angular_speed = lerp_f32(player->angular_speed, -angular_speed, angular_change);
             }
             else
             {
                 player->angular_speed = lerp_f32(player->angular_speed, 0, angular_change);
             }
-            player->angular_speed *= gas ? 0.8 : 1;
+            player->angular_speed *= gas ? 0.7 : 1;
 
             g_state->input_mouse = input_mouse_get(g_state->window, g_renderer->camera, g_state->input_mouse);
         }
