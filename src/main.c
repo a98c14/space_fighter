@@ -16,16 +16,17 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
-    GameEntity* player          = g_entity_alloc();
-    player->speed               = 120;
-    player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate         = 0.1;
-    player->collider_type       = ColliderTypePlayerHitbox;
-    player->health              = 100;
-    player->collider_radius     = 20;
-    player->projectile_count    = 1;
-    player->bullet_spawn_offset = vec2(0, 9);
-    player->look_at             = vec2(1, 0);
+    GameEntity* player               = g_entity_alloc();
+    player->speed                    = 120;
+    player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
+    player->attack_rate              = 0.1;
+    player->collider_type            = ColliderTypePlayerHitbox;
+    player->health                   = 5;
+    player->invulnerability_duration = 1;
+    player->collider_radius          = 20;
+    player->projectile_count         = 1;
+    player->bullet_spawn_offset      = vec2(0, 9);
+    player->look_at                  = vec2(1, 0);
     entity_set_scale(player, vec2_one());
     entity_set_color(player, ColorInvisibleWhite);
     g_entity_enable_prop(player, EntityProp_Player);
@@ -226,7 +227,8 @@ main(void)
         /** attack state  */
         profiler_scope("attack state") for_each(entity, g_state->first_entity)
         {
-            entity->t_attack = max(0, entity->t_attack - dt);
+            entity->t_attack          = max(0, entity->t_attack - dt);
+            entity->t_invulnerability = max(0, entity->t_invulnerability - dt);
         }
 
         /** simple ai */
@@ -373,13 +375,14 @@ main(void)
                     target = collision->a;
                 }
 
-                if (bullet)
+                if (bullet && target->t_invulnerability <= 0)
                 {
                     g_entity_enable_prop(bullet, EntityProp_MarkedForDeletion);
                     entity_set_color_animation(target, ColorWhite, ColorInvisibleWhite, 0.3, EasingTypeEaseOutCubic);
                     entity_set_scale_animation(target, vec2(1.3, 1.3), vec2_one(), 0.3, EasingTypeEaseOutElastic);
                     entity_add_force(target, mul_vec2_f32(bullet->heading, 30));
-                    target->health -= 10;
+                    target->health -= 1;
+                    target->t_invulnerability = target->invulnerability_duration;
                     if (target->health <= 0)
                     {
                         g_entity_enable_prop(target, EntityProp_MarkedForDeletion);
@@ -403,15 +406,23 @@ main(void)
             }
         }
 
-        Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
-        trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
-        trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
-
         /** draw trail */
         profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
         {
-            trail_draw(left_wing_trail);
-            trail_draw(right_wing_trail);
+            if (gas)
+            {
+                Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
+                trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
+                trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
+
+                trail_draw(left_wing_trail);
+                trail_draw(right_wing_trail);
+            }
+            else
+            {
+                trail_reset(left_wing_trail);
+                trail_reset(right_wing_trail);
+            }
         }
 
         ps_update(dt);
@@ -434,7 +445,7 @@ main(void)
         {
             if (entity->sprite > 0)
             {
-                draw_sprite_colored(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one(), entity->color, 1);
+                draw_sprite_colored(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one(), entity->color, entity->t_invulnerability > 0 ? .8 : 1);
             }
         }
         /** render bullets */
