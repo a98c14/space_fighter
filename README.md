@@ -1,4 +1,4 @@
 # Space Fighter
 
 ## TODO
-- Add player
+- Add healthbar

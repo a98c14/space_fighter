@@ -17,8 +17,6 @@ main(void)
     const uint32 font_size = 18;
 
     GameEntity* player          = g_entity_alloc();
-    player->color               = ColorWhite;
-    player->scale               = vec2(1, 1);
     player->speed               = 120;
     player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
     player->attack_rate         = 0.1;
@@ -26,8 +24,10 @@ main(void)
     player->health              = 100;
     player->collider_radius     = 20;
     player->projectile_count    = 1;
-    player->bullet_spawn_offset = vec2(0, 18);
+    player->bullet_spawn_offset = vec2(0, 9);
     player->look_at             = vec2(1, 0);
+    entity_set_scale(player, vec2_one());
+    entity_set_color(player, ColorInvisibleWhite);
     g_entity_enable_prop(player, EntityProp_Player);
     g_entity_enable_prop(player, EntityProp_SmoothMovement);
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
@@ -47,11 +47,11 @@ main(void)
 
         g_state->background_objects = arena_push_array_zero(g_state->persistent_arena, BackgroundObject, 256);
         const SpriteIndex stars[]   = {
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_0,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_1,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_2,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_3,
-            SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_4,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_0,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_1,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_2,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_3,
+            SPRITE_GAME_CELESTIAL_OBJECTS_STAR_4,
         };
 
         for (uint32 i = 0; i < 20; i++)
@@ -59,11 +59,11 @@ main(void)
             g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.03, .position = vec2(random_between_f32(-400, 400), random_between_f32(-150, 150)), .rotation = random_between_f32(-180, 180), .sprite = stars[random_between_i32(0, array_count(stars))]};
         }
 
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_6};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -100), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_7};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(150, -60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_8};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_9};
-        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_CELESTIAL_OBJECT_5};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_NEBULA_0};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.045, .position = vec2(100, -100), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_NEBULA_1};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(150, -60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_0};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_1};
+        g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_2};
     }
 
     /* main loop */
@@ -79,6 +79,28 @@ main(void)
         if (is_paused)
             dt = 0;
 
+        GameEntity* entity;
+        /** movement */
+        profiler_scope("movement") for_each(entity, g_state->first_entity)
+        {
+            if (g_entity_has_prop(entity, EntityProp_SmoothMovement))
+            {
+                entity->direction = lerp_vec2(entity->direction, mul_vec2_f32(entity->heading, entity->speed * dt), 4 * dt);
+            }
+            else
+            {
+                entity->direction = mul_vec2_f32(entity->heading, entity->speed * dt);
+            }
+            entity->position = add_vec2(entity->position, entity->direction);
+        }
+
+        /** apply force */
+        profiler_scope("force") for_each(entity, g_state->first_entity)
+        {
+            entity->force    = add_vec2(entity->force, mul_vec2_f32(entity->force, -dt * 0.5));
+            entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, dt));
+        }
+
         /** gather input */
         bool32 gas = false;
         {
@@ -90,11 +112,11 @@ main(void)
             float32 angular_change = dt * 8;
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
-                player->angular_speed = lerp_f32(player->angular_speed, 200, angular_change);
+                player->angular_speed = lerp_f32(player->angular_speed, 250, angular_change);
             }
             else if (input_key_pressed(g_state->window, GLFW_KEY_D))
             {
-                player->angular_speed = lerp_f32(player->angular_speed, -200, angular_change);
+                player->angular_speed = lerp_f32(player->angular_speed, -250, angular_change);
             }
             else
             {
@@ -126,18 +148,12 @@ main(void)
                     Vec2    direction = rotate_vec2(vec2(1, 0), angle);
                     g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 430, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
                     ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
+                    player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -8));
                 }
                 post_processing_add_shake(2);
             }
         }
 
-        ShaderDataText shader_data    = {0};
-        shader_data.color             = d_color_white;
-        shader_data.thickness         = d_default_text_thickness;
-        shader_data.softness          = d_default_text_softness;
-        shader_data.outline_thickness = d_default_text_outline_thickness;
-
-        GameEntity* entity;
         /** delete marked entities */
         profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
         {
@@ -159,10 +175,10 @@ main(void)
                     g_entity_enable_prop(coin, EntityProp_PullTowardsPlayer);
                     coin->animation           = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
                     coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
-                    coin->force               = random_direction(20);
+                    coin->force               = random_direction(200);
                     coin->position            = entity->position;
-                    coin->scale               = vec2(1, 1);
-                    coin->color               = ColorWhite;
+                    entity_set_color(player, ColorInvisibleWhite);
+                    entity_set_scale_animation(coin, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
                 }
             }
 
@@ -260,31 +276,29 @@ main(void)
                 continue;
 
             entity->force = lerp_vec2(entity->force, vec2_zero(), dt);
-            entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, entity->t_alive));
+            entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, dt * 1000));
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
             }
         }
 
-        /** apply force */
-        profiler_scope("force") for_each(entity, g_state->first_entity)
+        /** property animations */
+        profiler_scope("property animations") for_each(entity, g_state->first_entity)
         {
-            entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, dt));
-        }
+            // scale
+            {
+                float32 t            = 1 - (entity->anim_scale_t / entity->anim_scale_duration);
+                entity->scale        = lerp_vec2(entity->anim_scale_start, entity->anim_scale_end, ease_dynamic(t, entity->anim_scale_easing));
+                entity->anim_scale_t = max(entity->anim_scale_t - dt, 0);
+            }
 
-        /** movement */
-        profiler_scope("movement") for_each(entity, g_state->first_entity)
-        {
-            if (g_entity_has_prop(entity, EntityProp_SmoothMovement))
+            // color
             {
-                entity->direction = lerp_vec2(entity->direction, mul_vec2_f32(entity->heading, entity->speed * dt), 4 * dt);
+                float32 t            = 1 - (entity->anim_color_t / entity->anim_color_duration);
+                entity->color        = vec4_to_color(lerp_vec4(entity->anim_color_start, entity->anim_color_end, ease_dynamic(t, entity->anim_color_easing)));
+                entity->anim_color_t = max(entity->anim_color_t - dt, 0);
             }
-            else
-            {
-                entity->direction = mul_vec2_f32(entity->heading, entity->speed * dt);
-            }
-            entity->position = add_vec2(entity->position, entity->direction);
         }
 
         /** collision */
@@ -352,6 +366,9 @@ main(void)
                 if (bullet)
                 {
                     g_entity_enable_prop(bullet, EntityProp_MarkedForDeletion);
+                    entity_set_color_animation(target, ColorWhite, ColorInvisibleWhite, 0.3, EasingTypeEaseOutCubic);
+                    entity_set_scale_animation(target, vec2(1.3, 1.3), vec2_one(), 0.3, EasingTypeEaseOutElastic);
+                    entity_add_force(target, mul_vec2_f32(bullet->heading, 30));
                     target->health -= 10;
                     if (target->health <= 0)
                     {
@@ -407,7 +424,7 @@ main(void)
         {
             if (entity->sprite > 0)
             {
-                draw_sprite(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one());
+                draw_sprite_colored(entity->position, entity->scale.x, entity->rotation, entity->sprite, vec2_one(), entity->color, 1);
             }
         }
         /** render bullets */
