@@ -17,13 +17,13 @@ main(void)
     const uint32 font_size = 18;
 
     GameEntity* player               = g_entity_alloc();
-    player->speed                    = 250;
+    player->speed                    = 125;
     player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate              = 0.1;
+    player->attack_rate              = 0.3;
     player->collider_type            = ColliderTypePlayerHitbox;
     player->health                   = 5;
     player->invulnerability_duration = 1;
-    player->collider_radius          = 20;
+    player->collider_radius          = 16;
     player->projectile_count         = 1;
     player->bullet_spawn_offset      = vec2(0, 9);
     player->look_at                  = vec2(1, 0);
@@ -35,6 +35,7 @@ main(void)
     g_entity_enable_prop(player, EntityProp_Collider);
 
     bool32 is_paused = false;
+    g_state->t_spawn = 2;
 
     Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
     Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
@@ -176,9 +177,14 @@ main(void)
             // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
             player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
             if (gas > 0)
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 200 * dt));
+            {
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 300 * dt));
+            }
 
-            player->force = clamp_vec2_length(0, player->force, 400);
+            if (gas == 0)
+            {
+                player->force = lerp_vec2(player->force, clamp_vec2_length(0, player->force, 200), dt);
+            }
 
             if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
             {
@@ -190,9 +196,9 @@ main(void)
                 {
                     float32 angle     = starting_angle + i * 15;
                     Vec2    direction = rotate_vec2(vec2(1, 0), angle);
-                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 430, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 240, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
                     ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
-                    player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -8));
+                    player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -2));
                 }
                 post_processing_add_shake(2);
             }
@@ -205,7 +211,7 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                g_spawn_enemy(random_point_between_circle(add_vec2(player->position, mul_vec2_f32(norm_vec2_safe(player->force), -150)), 30, 100));
+                g_spawn_enemy(random_point_between_circle(add_vec2(player->position, mul_vec2_f32(norm_vec2_safe(player->force), -200)), 30, 100));
             }
         }
 
@@ -275,7 +281,7 @@ main(void)
             if (entity->t_attack <= 0)
             {
                 entity->t_attack   = entity->attack_rate;
-                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24, 460, ANIMATION_GAME_VFX_HIT_EFFECT_ENEMY_BULLET);
+                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24, 300, ANIMATION_GAME_VFX_HIT_EFFECT_ENEMY_BULLET);
             }
         }
 
@@ -423,7 +429,7 @@ main(void)
             /** editor - physics */
             profiler_scope("editor - physics") if (g_state->editor_active)
             {
-                for (uint32 i = 0; i < collider_count; i++)
+                draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_default) for (uint32 i = 0; i < collider_count; i++)
                 {
                     ColliderInfo collider = colliders[i];
                     draw_circle(collider.position, collider.radius, ColorRed400);
