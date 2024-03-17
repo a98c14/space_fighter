@@ -141,7 +141,6 @@ g_spawn_enemy(Vec2 position)
     GameEntity* result        = g_entity_alloc();
     result->position          = position;
     result->color             = ColorWhite;
-    result->scale             = vec2(1, 1);
     result->coin_on_death.max = 10;
     result->speed             = 30;
     result->sprite            = SPRITE_GAME_SHIPS_RANGER;
@@ -149,6 +148,7 @@ g_spawn_enemy(Vec2 position)
     result->collider_radius   = 26;
     result->attack_rate       = 1;
     result->health            = 50;
+    entity_set_scale_animation(result, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(result, EntityProp_SimpleAI);
     g_entity_enable_prop(result, EntityProp_Collider);
@@ -167,7 +167,6 @@ g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color 
 
     bullet->position            = position;
     bullet->heading             = direction;
-    bullet->scale               = vec2(size, size);
     bullet->color               = color;
     bullet->speed               = speed;
     bullet->collider_type       = collider_type;
@@ -175,5 +174,25 @@ g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color 
     bullet->remaining_life      = 2;
     bullet->damage              = 10;
     bullet->on_delete_animation = on_delete_animation;
+    entity_set_scale_animation(bullet, vec2_zero(), vec2(size, size), 0.6, EasingTypeEaseOutElastic);
     return bullet;
+}
+
+internal void
+entity_set_scale(GameEntity* entity, Vec2 scale)
+{
+    entity->scale               = scale;
+    entity->anim_scale_end      = scale;
+    entity->anim_scale_duration = 1; // set to prevent division by zero during scale animation calculation
+}
+
+internal void
+entity_set_scale_animation(GameEntity* entity, Vec2 start, Vec2 end, float32 duration, EasingType easing)
+{
+    entity->scale               = start;
+    entity->anim_scale_start    = start;
+    entity->anim_scale_end      = end;
+    entity->anim_scale_t        = duration;
+    entity->anim_scale_duration = duration;
+    entity->anim_scale_easing   = easing;
 }

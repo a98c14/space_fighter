@@ -18,7 +18,6 @@ main(void)
 
     GameEntity* player          = g_entity_alloc();
     player->color               = ColorWhite;
-    player->scale               = vec2(1, 1);
     player->speed               = 120;
     player->sprite              = SPRITE_GAME_SHIPS_RED_BEATLE;
     player->attack_rate         = 0.1;
@@ -26,8 +25,9 @@ main(void)
     player->health              = 100;
     player->collider_radius     = 20;
     player->projectile_count    = 1;
-    player->bullet_spawn_offset = vec2(0, 18);
+    player->bullet_spawn_offset = vec2(0, 9);
     player->look_at             = vec2(1, 0);
+    entity_set_scale(player, vec2_one());
     g_entity_enable_prop(player, EntityProp_Player);
     g_entity_enable_prop(player, EntityProp_SmoothMovement);
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
@@ -79,6 +79,21 @@ main(void)
         if (is_paused)
             dt = 0;
 
+        GameEntity* entity;
+        /** movement */
+        profiler_scope("movement") for_each(entity, g_state->first_entity)
+        {
+            if (g_entity_has_prop(entity, EntityProp_SmoothMovement))
+            {
+                entity->direction = lerp_vec2(entity->direction, mul_vec2_f32(entity->heading, entity->speed * dt), 4 * dt);
+            }
+            else
+            {
+                entity->direction = mul_vec2_f32(entity->heading, entity->speed * dt);
+            }
+            entity->position = add_vec2(entity->position, entity->direction);
+        }
+
         /** gather input */
         bool32 gas = false;
         {
@@ -126,6 +141,7 @@ main(void)
                     Vec2    direction = rotate_vec2(vec2(1, 0), angle);
                     g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 430, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
                     ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
+                    player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -20));
                 }
                 post_processing_add_shake(2);
             }
@@ -137,7 +153,6 @@ main(void)
         shader_data.softness          = d_default_text_softness;
         shader_data.outline_thickness = d_default_text_outline_thickness;
 
-        GameEntity* entity;
         /** delete marked entities */
         profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
         {
@@ -161,8 +176,8 @@ main(void)
                     coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
                     coin->force               = random_direction(20);
                     coin->position            = entity->position;
-                    coin->scale               = vec2(1, 1);
                     coin->color               = ColorWhite;
+                    entity_set_scale(coin, vec2_one());
                 }
             }
 
@@ -267,25 +282,19 @@ main(void)
             }
         }
 
+        /** scale animation */
+        profiler_scope("scale anim") for_each(entity, g_state->first_entity)
+        {
+            float32 t            = 1 - (entity->anim_scale_t / entity->anim_scale_duration);
+            entity->scale        = lerp_vec2(entity->anim_scale_start, entity->anim_scale_end, ease_dynamic(t, entity->anim_scale_easing));
+            entity->anim_scale_t = max(entity->anim_scale_t - dt, 0);
+        }
+
         /** apply force */
         profiler_scope("force") for_each(entity, g_state->first_entity)
         {
-            entity->force    = add_vec2(entity->force, mul_vec2_f32(entity->force, -dt));
+            entity->force    = add_vec2(entity->force, mul_vec2_f32(entity->force, -dt * 0.5));
             entity->position = add_vec2(entity->position, mul_vec2_f32(entity->force, dt));
-        }
-
-        /** movement */
-        profiler_scope("movement") for_each(entity, g_state->first_entity)
-        {
-            if (g_entity_has_prop(entity, EntityProp_SmoothMovement))
-            {
-                entity->direction = lerp_vec2(entity->direction, mul_vec2_f32(entity->heading, entity->speed * dt), 4 * dt);
-            }
-            else
-            {
-                entity->direction = mul_vec2_f32(entity->heading, entity->speed * dt);
-            }
-            entity->position = add_vec2(entity->position, entity->direction);
         }
 
         /** collision */

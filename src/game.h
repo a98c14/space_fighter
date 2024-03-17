@@ -103,8 +103,11 @@ struct GameEntity
     uint32  projectile_count;
 
     /** animation */
+    Vec2       anim_scale_start;
+    Vec2       anim_scale_end;
     float32    anim_scale_t;
-    EasingType anim_scale_type;
+    float32    anim_scale_duration;
+    EasingType anim_scale_easing;
 
     /** force */
     Vec2 force;
@@ -200,6 +203,10 @@ internal void draw_projectile(Vec2 pos, float32 radius, Color color);
 /** utils */
 internal GameEntity* g_spawn_enemy(Vec2 position);
 internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation);
+
+/** component helpers */
+internal void entity_set_scale(GameEntity* entity, Vec2 scale);
+internal void entity_set_scale_animation(GameEntity* entity, Vec2 start, Vec2 end, float32 duration, EasingType easing);
 
 /** physics */
 typedef struct
