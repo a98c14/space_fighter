@@ -17,7 +17,7 @@ main(void)
     const uint32 font_size = 18;
 
     GameEntity* player               = g_entity_alloc();
-    player->speed                    = 120;
+    player->speed                    = 250;
     player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
     player->attack_rate              = 0.1;
     player->collider_type            = ColliderTypePlayerHitbox;
@@ -142,17 +142,18 @@ main(void)
                 gas = true;
             }
 
+            float32 angular_change = dt * 8;
+            float32 angular_speed  = 400;
             if (input_key_pressed(g_state->window, GLFW_KEY_W))
             {
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 200 * dt));
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, player->speed * dt));
+                angular_speed -= 200;
             }
             if (input_key_pressed(g_state->window, GLFW_KEY_S))
             {
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -200 * dt));
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -player->speed * dt * 0.6));
             }
 
-            float32 angular_change = dt * 8;
-            float32 angular_speed  = 400;
             if (input_key_pressed(g_state->window, GLFW_KEY_A))
             {
                 player->angular_speed = lerp_f32(player->angular_speed, angular_speed, angular_change);
@@ -175,7 +176,7 @@ main(void)
             // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
             player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
             if (gas > 0)
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 10));
+                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 200 * dt));
 
             player->force = clamp_vec2_length(0, player->force, 400);
 
@@ -204,7 +205,7 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                g_spawn_enemy(random_point_between_circle(player->position, 250, 450));
+                g_spawn_enemy(random_point_between_circle(add_vec2(player->position, mul_vec2_f32(norm_vec2_safe(player->force), -150)), 30, 100));
             }
         }
 
@@ -259,8 +260,10 @@ main(void)
             if (!g_entity_has_prop(entity, EntityProp_SimpleAI))
                 continue;
 
-            entity->heading = heading_to_vec2(entity->position, player->position);
+            // entity->heading = heading_to_vec2(entity->position, player->position);
             entity->look_at = heading_to_vec2(entity->position, player->position);
+            entity->force   = add_vec2(entity->force, mul_vec2_f32(entity->look_at, entity->speed * dt));
+            entity->force   = clamp_vec2_length(0, entity->force, entity->speed);
         }
 
         /** combat ai */
@@ -272,7 +275,7 @@ main(void)
             if (entity->t_attack <= 0)
             {
                 entity->t_attack   = entity->attack_rate;
-                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24, 100, ANIMATION_GAME_VFX_HIT_EFFECT_ENEMY_BULLET);
+                GameEntity* bullet = g_spawn_bullet(entity->position, entity->look_at, ColliderTypeEnemyAttack, ColorRed500, 24, 460, ANIMATION_GAME_VFX_HIT_EFFECT_ENEMY_BULLET);
             }
         }
 

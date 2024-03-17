@@ -141,7 +141,7 @@ g_spawn_enemy(Vec2 position)
     GameEntity* result        = g_entity_alloc();
     result->position          = position;
     result->coin_on_death.max = 10;
-    result->speed             = 30;
+    result->speed             = 400;
     result->sprite            = SPRITE_GAME_SHIPS_RANGER;
     result->collider_type     = ColliderTypeEnemyHitbox;
     result->collider_radius   = 26;
