@@ -59,6 +59,7 @@ enum
     EntityProp_CombatAI,
     EntityProp_PullTowardsPlayer,
     EntityProp_Bullet,
+    EntityProp_DestroyWhenAwayFromPlayer,
     EntityProp_Player,
     EntityProp_Collider,
     EntityProp_Attack,
@@ -103,6 +104,7 @@ struct GameEntity
     Vec2    bullet_spawn_offset;
     float32 bullet_speed;
     uint32  projectile_count;
+    float32 t_out_of_range;
 
     /** animation */
     Vec2       anim_scale_start;

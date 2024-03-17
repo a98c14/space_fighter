@@ -146,7 +146,7 @@ g_spawn_enemy(Vec2 position)
     result->collider_type     = ColliderTypeEnemyHitbox;
     result->collider_radius   = 26;
     result->attack_rate       = 2;
-    result->health            = 80;
+    result->health            = 3;
     entity_set_color(result, ColorInvisibleWhite);
     entity_set_scale_animation(result, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);

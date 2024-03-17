@@ -81,6 +81,38 @@ main(void)
             dt = 0;
 
         GameEntity* entity;
+
+        /** delete marked entities */
+        profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_MarkedForDeletion))
+                continue;
+
+            if (entity->on_delete_animation > 0)
+            {
+                ps_particle_animation(vec3_xy(entity->position), entity->on_delete_animation, random_between_f32(-180, 180));
+            }
+
+            bool32 drops_coin = entity->coin_on_death.min > 0 || entity->coin_on_death.max > 0;
+            if (drops_coin)
+            {
+                uint32 coin_count = random_between_i32(entity->coin_on_death.min, entity->coin_on_death.max);
+                for (uint32 i = 0; i < coin_count; i++)
+                {
+                    GameEntity* coin = g_entity_alloc();
+                    g_entity_enable_prop(coin, EntityProp_PullTowardsPlayer);
+                    coin->animation           = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
+                    coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
+                    coin->force               = random_direction(200);
+                    coin->position            = entity->position;
+                    entity_set_color(player, ColorInvisibleWhite);
+                    entity_set_scale_animation(coin, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
+                }
+            }
+
+            g_entity_free(entity);
+        }
+
         /** movement */
         profiler_scope("movement") for_each(entity, g_state->first_entity)
         {
@@ -165,37 +197,6 @@ main(void)
             }
         }
 
-        /** delete marked entities */
-        profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
-        {
-            if (!g_entity_has_prop(entity, EntityProp_MarkedForDeletion))
-                continue;
-
-            if (entity->on_delete_animation > 0)
-            {
-                ps_particle_animation(vec3_xy(entity->position), entity->on_delete_animation, random_between_f32(-180, 180));
-            }
-
-            bool32 drops_coin = entity->coin_on_death.min > 0 || entity->coin_on_death.max > 0;
-            if (drops_coin)
-            {
-                uint32 coin_count = random_between_i32(entity->coin_on_death.min, entity->coin_on_death.max);
-                for (uint32 i = 0; i < coin_count; i++)
-                {
-                    GameEntity* coin = g_entity_alloc();
-                    g_entity_enable_prop(coin, EntityProp_PullTowardsPlayer);
-                    coin->animation           = ANIMATION_GAME_COLLECTABLES_EXPERIENCE_ORB;
-                    coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
-                    coin->force               = random_direction(200);
-                    coin->position            = entity->position;
-                    entity_set_color(player, ColorInvisibleWhite);
-                    entity_set_scale_animation(coin, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
-                }
-            }
-
-            g_entity_free(entity);
-        }
-
         /** enemy spawner */
         profiler_scope("enemy spawner")
         {
@@ -203,7 +204,28 @@ main(void)
             if (g_state->t_spawn < 0)
             {
                 g_state->t_spawn = 2;
-                g_spawn_enemy(random_point_between_circle(vec2_zero(), 250, 450));
+                g_spawn_enemy(random_point_between_circle(player->position, 250, 450));
+            }
+        }
+
+        /** destroy out of range enemies */
+        const float32 destroy_range_sqr = powf(300, 2);
+        profiler_scope("destroy out of range enemies") for_each(entity, g_state->first_entity)
+        {
+            if (!g_entity_has_prop(entity, EntityProp_DestroyWhenAwayFromPlayer))
+                continue;
+            float32 dsqr = distsqr_vec2(player->position, entity->position);
+            if (dsqr > destroy_range_sqr)
+            {
+                entity->t_out_of_range += dt;
+                if (entity->t_out_of_range > 1)
+                {
+                    g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
+                }
+            }
+            else
+            {
+                entity->t_out_of_range = 0;
             }
         }
 
