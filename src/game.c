@@ -140,14 +140,14 @@ g_spawn_enemy(Vec2 position)
 {
     GameEntity* result        = g_entity_alloc();
     result->position          = position;
-    result->color             = ColorWhite;
     result->coin_on_death.max = 10;
     result->speed             = 30;
     result->sprite            = SPRITE_GAME_SHIPS_RANGER;
     result->collider_type     = ColliderTypeEnemyHitbox;
     result->collider_radius   = 26;
-    result->attack_rate       = 1;
-    result->health            = 50;
+    result->attack_rate       = 2;
+    result->health            = 80;
+    entity_set_color(result, ColorInvisibleWhite);
     entity_set_scale_animation(result, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
     g_entity_enable_prop(result, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(result, EntityProp_SimpleAI);
@@ -167,15 +167,21 @@ g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color 
 
     bullet->position            = position;
     bullet->heading             = direction;
-    bullet->color               = color;
     bullet->speed               = speed;
     bullet->collider_type       = collider_type;
     bullet->collider_radius     = 10;
     bullet->remaining_life      = 2;
     bullet->damage              = 10;
     bullet->on_delete_animation = on_delete_animation;
+    entity_set_color(bullet, color);
     entity_set_scale_animation(bullet, vec2_zero(), vec2(size, size), 0.6, EasingTypeEaseOutElastic);
     return bullet;
+}
+
+internal void
+entity_add_force(GameEntity* entity, Vec2 force)
+{
+    entity->force = add_vec2(entity->force, force);
 }
 
 internal void
@@ -195,4 +201,23 @@ entity_set_scale_animation(GameEntity* entity, Vec2 start, Vec2 end, float32 dur
     entity->anim_scale_t        = duration;
     entity->anim_scale_duration = duration;
     entity->anim_scale_easing   = easing;
+}
+
+internal void
+entity_set_color(GameEntity* entity, Color color)
+{
+    entity->color               = color;
+    entity->anim_color_end      = color_v4(color);
+    entity->anim_color_duration = 1; // set to prevent division by zero during scale animation calculation
+}
+
+internal void
+entity_set_color_animation(GameEntity* entity, Color start, Color end, float32 duration, EasingType easing)
+{
+    entity->color               = start;
+    entity->anim_color_start    = color_v4(start);
+    entity->anim_color_end      = color_v4(end);
+    entity->anim_color_t        = duration;
+    entity->anim_color_duration = duration;
+    entity->anim_color_easing   = easing;
 }

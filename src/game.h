@@ -109,6 +109,12 @@ struct GameEntity
     float32    anim_scale_duration;
     EasingType anim_scale_easing;
 
+    Vec4       anim_color_start;
+    Vec4       anim_color_end;
+    float32    anim_color_t;
+    float32    anim_color_duration;
+    EasingType anim_color_easing;
+
     /** force */
     Vec2 force;
     Vec2 direction;
@@ -205,8 +211,11 @@ internal GameEntity* g_spawn_enemy(Vec2 position);
 internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation);
 
 /** component helpers */
+internal void entity_set_color(GameEntity* entity, Color color);
+internal void entity_set_color_animation(GameEntity* entity, Color start, Color end, float32 duration, EasingType easing);
 internal void entity_set_scale(GameEntity* entity, Vec2 scale);
 internal void entity_set_scale_animation(GameEntity* entity, Vec2 start, Vec2 end, float32 duration, EasingType easing);
+internal void entity_add_force(GameEntity* entity, Vec2 force);
 
 /** physics */
 typedef struct
