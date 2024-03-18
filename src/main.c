@@ -74,7 +74,7 @@ main(void)
     /* main loop */
     while (!window_should_close(g_state->window))
     {
-        oe_audio_play(gun_sound);
+
         arena_reset(g_state->frame_arena);
         draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 12, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
@@ -198,6 +198,7 @@ main(void)
                 player->t_attack        = player->attack_rate;
                 Vec2    bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
                 float32 starting_angle  = angle_vec2(player->look_at) - (uint32)(player->projectile_count / 2) * 15;
+                oe_audio_play(gun_sound);
                 for (uint32 i = 0; i < player->projectile_count; i++)
                 {
                     float32 angle     = starting_angle + i * 15;
