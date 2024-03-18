@@ -67,10 +67,14 @@ main(void)
         g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_1};
         g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_2};
     }
+    glClearColor(0, 0, 0, 1);
+
+    OE_AudioHandle gun_sound = oe_audio_handle_from_path(string("C:\\Users\\selim\\source\\github\\space_fighter\\assets\\audio\\gun.mp3"));
 
     /* main loop */
     while (!window_should_close(g_state->window))
     {
+        oe_audio_play(gun_sound);
         arena_reset(g_state->frame_arena);
         draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 12, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
@@ -113,6 +117,8 @@ main(void)
 
             g_entity_free(entity);
         }
+
+        game_hud_update();
 
         /** movement */
         profiler_scope("movement") for_each(entity, g_state->first_entity)
@@ -495,6 +501,7 @@ main(void)
     }
 
     window_destroy(g_state->window);
+    oe_audio_shutdown();
     logger_flush();
     return 0;
 }

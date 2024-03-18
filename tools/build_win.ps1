@@ -17,6 +17,7 @@ $compile_args = @(
     ".\opus\lib\freetype.lib",
     ".\opus\lib\glfw3dll.lib",
     ".\opus\lib\glfw3.lib",
+    ".\opus\lib\soloud_x64_d.lib",
     ".\opus\lib\gl.obj",
     "opengl32.lib");
 

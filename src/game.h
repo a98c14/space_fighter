@@ -11,13 +11,10 @@
 
 #include <opus.h>
 
+#include "game_ui.h"
 #include "generated/sprites.h"
 #include "particle_system.h"
 #include "post_processing.h"
-
-#include "particle_system.c"
-#include "post_processing.c"
-#include <opus.c>
 
 #define WINDOW_WIDTH  1920
 #define WINDOW_HEIGHT 1080

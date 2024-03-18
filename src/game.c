@@ -1,5 +1,11 @@
 #include "game.h"
 
+#include <opus.c>
+
+#include "game_ui.c"
+#include "particle_system.c"
+#include "post_processing.c"
+
 internal void
 g_init()
 {
@@ -15,6 +21,8 @@ g_init()
     g_state->time             = engine_time_new();
     profiler_init(persistent_arena);
     ArenaTemp temp = scratch_begin(0, 0);
+
+    oe_audio_init(persistent_arena);
 
     /** renderer */
     RendererConfiguration* r_config = r_config_new(g_state->frame_arena);
