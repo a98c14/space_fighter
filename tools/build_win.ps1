@@ -57,7 +57,6 @@ $link_args += "/out:main.exe"
 $source_file_path = ""
 if ($commands["game"]) { $source_file_path = "../src/main.c" }
 
-
 New-Item -ItemType Directory -Force -Path $($commands["output"]) | Out-Null;
 Push-Location $($commands["output"]) | Out-Null
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()

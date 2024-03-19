@@ -71,7 +71,7 @@ main(void)
     }
     glClearColor(0, 0, 0, 1);
 
-    OE_AudioHandle gun_sound = oe_audio_handle_from_path(string("C:\\Users\\selim\\source\\github\\space_fighter\\assets\\audio\\gun.mp3"));
+    OE_AudioHandle gun_sound = oe_audio_handle_from_path(string(ASSET_PATH "\\audio\\gun.mp3"));
 
     /** main loop */
     while (!window_should_close(g_state->window))
