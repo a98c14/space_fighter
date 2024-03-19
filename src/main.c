@@ -16,10 +16,12 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
+    log_info("%s", VERSION_NUMBER);
+
     GameEntity* player               = g_entity_alloc();
     player->speed                    = 125;
     player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate              = 0.3;
+    player->attack_rate              = 0.1;
     player->collider_type            = ColliderTypePlayerHitbox;
     player->health                   = 5;
     player->invulnerability_duration = 1;
@@ -67,12 +69,16 @@ main(void)
         g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.06, .position = vec2(100, 60), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_1};
         g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_2};
     }
+    glClearColor(0, 0, 0, 1);
 
-    /* main loop */
+    OE_AudioHandle gun_sound = oe_audio_handle_from_path(string("C:\\Users\\selim\\source\\github\\space_fighter\\assets\\audio\\gun.mp3"));
+
+    /** main loop */
     while (!window_should_close(g_state->window))
     {
+
         arena_reset(g_state->frame_arena);
-        draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 12, ColorWhite);
+        draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 7, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
         if (input_key_pressed(g_state->window, GLFW_KEY_RIGHT_BRACKET))
             break;
@@ -82,7 +88,6 @@ main(void)
             dt = 0;
 
         GameEntity* entity;
-
         /** delete marked entities */
         profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
         {
@@ -113,6 +118,8 @@ main(void)
 
             g_entity_free(entity);
         }
+
+        game_hud_update();
 
         /** movement */
         profiler_scope("movement") for_each(entity, g_state->first_entity)
@@ -192,6 +199,7 @@ main(void)
                 player->t_attack        = player->attack_rate;
                 Vec2    bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
                 float32 starting_angle  = angle_vec2(player->look_at) - (uint32)(player->projectile_count / 2) * 15;
+                oe_audio_play(gun_sound);
                 for (uint32 i = 0; i < player->projectile_count; i++)
                 {
                     float32 angle     = starting_angle + i * 15;
@@ -495,6 +503,7 @@ main(void)
     }
 
     window_destroy(g_state->window);
+    oe_audio_shutdown();
     logger_flush();
     return 0;
 }
