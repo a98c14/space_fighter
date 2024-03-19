@@ -16,6 +16,8 @@ main(void)
     g_init();
     const uint32 font_size = 18;
 
+    log_info("%s", VERSION_NUMBER);
+
     GameEntity* player               = g_entity_alloc();
     player->speed                    = 125;
     player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
@@ -71,12 +73,12 @@ main(void)
 
     OE_AudioHandle gun_sound = oe_audio_handle_from_path(string("C:\\Users\\selim\\source\\github\\space_fighter\\assets\\audio\\gun.mp3"));
 
-    /* main loop */
+    /** main loop */
     while (!window_should_close(g_state->window))
     {
 
         arena_reset(g_state->frame_arena);
-        draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 12, ColorWhite);
+        draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 7, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
         if (input_key_pressed(g_state->window, GLFW_KEY_RIGHT_BRACKET))
             break;
@@ -86,7 +88,6 @@ main(void)
             dt = 0;
 
         GameEntity* entity;
-
         /** delete marked entities */
         profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
         {
