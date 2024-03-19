@@ -79,7 +79,7 @@ jobs:
         arch: amd64
     
     - name: Build
-      shell: pwsh
+      shell: powershell
       run: |
         .\tools\build_win.ps1 output=space_fighter version=v${{ env.version }} game release
         
