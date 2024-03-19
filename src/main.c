@@ -19,7 +19,7 @@ main(void)
     GameEntity* player               = g_entity_alloc();
     player->speed                    = 125;
     player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate              = 0.3;
+    player->attack_rate              = 0.1;
     player->collider_type            = ColliderTypePlayerHitbox;
     player->health                   = 5;
     player->invulnerability_duration = 1;
