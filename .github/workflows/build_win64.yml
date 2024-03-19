@@ -80,7 +80,7 @@ jobs:
     - name: Build
       shell: powershell
       run: |
-        .\tools\build_win.ps1 output=space_fighter\bin\space_fighter.exe version="v${{ env.version }}-$(git describe --always --dirty)" game release
+        .\tools\build_win.ps1 output=space_fighter\bin\space_fighter.exe version="v${{ env.version }}.$(git describe --always --dirty)" game release
         
     - name: Copy dependencies
       shell: pwsh

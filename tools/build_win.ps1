@@ -15,12 +15,18 @@ else {
 $output_directory = ([io.fileinfo]$($commands["output"])).DirectoryName
 $output_basename = ([io.fileinfo]$($commands["output"])).BaseName
 
-if ($null -eq $commands["version"]) {
-    $commands["version"] = $(git describe --tags)
-}
+
 
 # --- Set Compile Flags -----------------------------------
 if (-not $commands["release"]) { $commands["debug"] = 1; }
+
+if ($commands["run"] -and $null -eq $commands["version"]) {
+    $commands["version"] = "v0.0.0"
+}
+elseif ($null -eq $commands["version"]) {
+    $commands["version"] = "$(git describe --tags --abbrev=0)-$(git describe --always)"
+}
+
 $compile_args = @();
 if ($commands["release"]) {
     Write-Host "[BUILD] release mode" 
