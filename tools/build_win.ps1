@@ -1,4 +1,5 @@
 # --- Parse Commands --------------------------------------
+$total_stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $commands = @{};
 foreach ($arg in $args) {
     $parts = $arg -split "="
@@ -42,6 +43,10 @@ if ($commands["debug"]) {
     $commands["version"] = "$($commands["version"])-debug"
 }
 
+if ($commands["profile"]) {
+    $compile_args += "/DPROFILE_SUPERLUMINAL=1"
+}
+
 # --- Common Compile Flags ---------------------------------
 $compile_args += "/Fo$output_directory\$output_basename.obj"
 $compile_args += "/nologo"
@@ -71,13 +76,12 @@ if ($commands["game"]) { $source_file_path = "$root_directory\src\main.c" }
 
 New-Item -ItemType Directory -Force -Path $output_directory | Out-Null;
 Push-Location $root_directory
+$compile_stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 cl $compile_args $source_file_path /link $link_args;
-Pop-Location
-
-Push-Location $output_directory | Out-Null
-$stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 Write-Host "[BUILD] target: $source_file_path";
-Write-Host "[BUILD] time: $(($stopwatch.ElapsedMilliseconds / 1000).ToString())s"
+Write-Host "[BUILD] time compilation: $(($compile_stopwatch.ElapsedMilliseconds / 1000.0).ToString("0.00"))s, total: $(($total_stopwatch.ElapsedMilliseconds / 1000.0).ToString("0.00"))s"
+Pop-Location
+Push-Location $output_directory | Out-Null
 if ($commands["run"]) { Invoke-Expression "$output_directory\$output_basename.exe" }
 Pop-Location;
 

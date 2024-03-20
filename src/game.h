@@ -156,11 +156,11 @@ typedef struct
     EngineTime time;
 
     /** rendering */
-    PassIndex     pass_post_processing;
-    PassIndex     pass_pixel_perfect;
-    PassIndex     pass_default;
-    MaterialIndex material_post_processing;
+    PassIndex pass_post_processing;
+    PassIndex pass_pixel_perfect;
+    PassIndex pass_default;
 
+    MaterialIndex material_post_processing;
     MaterialIndex material_pass_default;
     MaterialIndex material_projectile;
 
@@ -182,6 +182,7 @@ typedef struct
     GameEntity* last_entity;
 
     /** game state */
+    bool32  is_paused;
     float32 t_spawn;
 
     /** editor */
@@ -191,13 +192,17 @@ global GameState* g_state;
 
 internal void g_init();
 
-/** entity */
+/* -------------------------------------------------------------------------- */
+/*                                   ENTITY                                   */
+/* -------------------------------------------------------------------------- */
 internal GameEntity* g_entity_alloc();
 internal void        g_entity_free(GameEntity* e);
 internal bool32      g_entity_has_prop(GameEntity* e, EntityProp prop);
 internal void        g_entity_enable_prop(GameEntity* e, EntityProp prop);
 
-/** render */
+/* -------------------------------------------------------------------------- */
+/*                                   RENDER                                   */
+/* -------------------------------------------------------------------------- */
 typedef struct
 {
     Vec4    color;
@@ -207,18 +212,34 @@ typedef struct
 } ShaderDataProjectile;
 internal void draw_projectile(Vec2 pos, float32 radius, Color color);
 
-/** utils */
+/* -------------------------------------------------------------------------- */
+/*                                  CONTROLS                                  */
+/* -------------------------------------------------------------------------- */
+typedef enum
+{
+    GameKeyNone = 0,
+    GameKeyPause,
+    GameKeyEditor,
+} GameKey;
+
+/* -------------------------------------------------------------------------- */
+/*                                    UTILS                                   */
+/* -------------------------------------------------------------------------- */
 internal GameEntity* g_spawn_enemy(Vec2 position);
 internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation);
 
-/** component helpers */
+/* -------------------------------------------------------------------------- */
+/*                              COMPONENT HELPERS                             */
+/* -------------------------------------------------------------------------- */
 internal void entity_set_color(GameEntity* entity, Color color);
 internal void entity_set_color_animation(GameEntity* entity, Color start, Color end, float32 duration, EasingType easing);
 internal void entity_set_scale(GameEntity* entity, Vec2 scale);
 internal void entity_set_scale_animation(GameEntity* entity, Vec2 start, Vec2 end, float32 duration, EasingType easing);
 internal void entity_add_force(GameEntity* entity, Vec2 force);
 
-/** physics */
+/* -------------------------------------------------------------------------- */
+/*                                   PHYSICS                                  */
+/* -------------------------------------------------------------------------- */
 typedef struct
 {
     ColliderType type;

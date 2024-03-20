@@ -10,6 +10,7 @@ post_processing_init(Arena* arena, Renderer* renderer)
     /** settings */
     post_processing_state->camera_shake_decay_rate = 0.9;
     post_processing_state->camera_shake_cap        = 0.9;
+    post_processing_state->saturation              = 1;
 
     g_post_processing_state = post_processing_state;
 }
@@ -27,6 +28,8 @@ post_processing_update(EngineTime time)
     g_post_processing_state->current_camera_shake_duration -= time.dt * g_post_processing_state->camera_shake_decay_rate;
     g_post_processing_state->current_camera_shake_duration = max(g_post_processing_state->current_camera_shake_duration, 0);
     g_post_processing_state->current_camera_shake_strength = powf(g_post_processing_state->current_camera_shake_duration, 2);
+
+    g_post_processing_state->uniform_data->saturation = g_post_processing_state->saturation;
 }
 
 internal void
@@ -49,4 +52,10 @@ internal void
 post_processing_add_shake(float32 strength)
 {
     g_post_processing_state->current_camera_shake_duration = min(g_post_processing_state->current_camera_shake_duration + strength, g_post_processing_state->camera_shake_cap);
+}
+
+internal void
+post_processing_set_saturation(float32 saturation)
+{
+    g_post_processing_state->saturation = saturation;
 }

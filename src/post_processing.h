@@ -6,8 +6,10 @@
 
 typedef struct
 {
-    Vec4 color;
-    Vec4 aberration;
+    Vec4    color;
+    Vec4    aberration;
+    float32 saturation;
+    Vec3    _;
 } ShaderDataPostProcessing;
 
 typedef struct
@@ -25,6 +27,8 @@ typedef struct
     float32 current_camera_shake_duration;
     float32 current_camera_shake_strength;
 
+    float32 saturation;
+
     ShaderDataPostProcessing* uniform_data;
 } PostProcessingState;
 global PostProcessingState* g_post_processing_state;
@@ -34,3 +38,4 @@ internal void post_processing_update(EngineTime time);
 internal void post_processing_add_aberration();
 internal void post_processing_move_camera(Vec2 position, EngineTime time);
 internal void post_processing_add_shake(float32 strength);
+internal void post_processing_set_saturation(float32 saturation);

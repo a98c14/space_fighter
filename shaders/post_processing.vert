@@ -25,6 +25,7 @@ layout (std140, binding = 4) uniform Custom
 {
     vec4 u_color;
     vec4 u_aberration;
+    float u_saturation;
 };
 
 uniform mat4 u_model;

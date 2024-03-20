@@ -14,9 +14,6 @@ main(void)
     ThreadContext tctx;
     tctx_init_and_equip(&tctx);
     g_init();
-    const uint32 font_size = 18;
-
-    log_info("%s", VERSION_NUMBER);
 
     GameEntity* player               = g_entity_alloc();
     player->speed                    = 125;
@@ -36,7 +33,6 @@ main(void)
     g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
     g_entity_enable_prop(player, EntityProp_Collider);
 
-    bool32 is_paused = false;
     g_state->t_spawn = 2;
 
     Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
@@ -48,7 +44,6 @@ main(void)
 
     /** setup background objects */
     {
-
         g_state->background_objects = arena_push_array_zero(g_state->persistent_arena, BackgroundObject, 256);
         const SpriteIndex stars[]   = {
             SPRITE_GAME_CELESTIAL_OBJECTS_STAR_0,
@@ -70,22 +65,28 @@ main(void)
         g_state->background_objects[g_state->background_object_count++] = (BackgroundObject){.parallax_scale = 1.1, .position = vec2(50, -20), .sprite = SPRITE_GAME_CELESTIAL_OBJECTS_PLANET_2};
     }
     glClearColor(0, 0, 0, 1);
-
     OE_AudioHandle gun_sound = oe_audio_handle_from_path(string(ASSET_PATH "\\audio\\gun.mp3"));
 
     /** main loop */
     while (!window_should_close(g_state->window))
     {
-
+        profiler_begin("frame");
         arena_reset(g_state->frame_arena);
         draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 7, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
-        if (input_key_pressed(g_state->window, GLFW_KEY_RIGHT_BRACKET))
+        if (input_key_pressed_raw(g_state->window, GLFW_KEY_RIGHT_BRACKET))
             break;
 
         float32 dt = g_state->time.dt;
-        if (is_paused)
+        if (g_state->is_paused)
+        {
+            post_processing_set_saturation(0);
             dt = 0;
+        }
+        else
+        {
+            post_processing_set_saturation(1);
+        }
 
         GameEntity* entity;
         /** delete marked entities */
@@ -120,6 +121,33 @@ main(void)
         }
 
         game_hud_update();
+        input_manager_update(g_state->time);
+
+        /** editor */
+        profiler_scope("editor") if (g_state->editor_active)
+        {
+            ArenaTemp     temp        = scratch_begin(0, 0);
+            const float32 line_height = 8;
+            const float32 text_size   = 7;
+            Rect          screen      = screen_rect();
+            Rect          editor      = rect_anchor(rect_from_wh(300, 80), rect_shrink_f32(screen, 16), ANCHOR_TL_TL);
+            draw_rect(editor, ColorWhite100A);
+            editor = rect_shrink_f32(editor, 8);
+            for (uint32 i = 1; i < g_input_manager->key_count; i++)
+            {
+                InputState state        = g_input_manager->key_states[i];
+                Rect       line         = rect_cut_top(&editor, line_height);
+                char*      pressed_text = (state.key_state & InputKeyStatePressed) > 0 ? "pressed" : "released";
+                char*      new_text     = (state.key_state & InputKeyStateNew) > 0 ? "new" : "old";
+
+                draw_text(g_input_manager->key_names[i], line, ANCHOR_TL_TL, text_size, ColorBlack);
+                rect_cut_left(&line, 50);
+                draw_text(string_pushf(temp.arena, "%s (%s)", pressed_text, new_text), line, ANCHOR_TL_TL, text_size, ColorBlack);
+                rect_cut_left(&line, 64);
+                draw_text(string_pushf(temp.arena, "press: %.2f, release: %.2f", state.t_press, state.t_release), line, ANCHOR_TL_TL, text_size, ColorBlack);
+            }
+            scratch_end(temp);
+        }
 
         /** movement */
         profiler_scope("movement") for_each(entity, g_state->first_entity)
@@ -145,28 +173,28 @@ main(void)
         /** gather input */
         bool32 gas = false;
         {
-            if (input_key_pressed(g_state->window, GLFW_KEY_SPACE))
+            if (input_key_pressed_raw(g_state->window, GLFW_KEY_SPACE))
             {
                 gas = true;
             }
 
             float32 angular_change = dt * 8;
             float32 angular_speed  = 400;
-            if (input_key_pressed(g_state->window, GLFW_KEY_W))
+            if (input_key_pressed_raw(g_state->window, GLFW_KEY_W))
             {
                 player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, player->speed * dt));
                 angular_speed -= 200;
             }
-            if (input_key_pressed(g_state->window, GLFW_KEY_S))
+            if (input_key_pressed_raw(g_state->window, GLFW_KEY_S))
             {
                 player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -player->speed * dt * 0.6));
             }
 
-            if (input_key_pressed(g_state->window, GLFW_KEY_A))
+            if (input_key_pressed_raw(g_state->window, GLFW_KEY_A))
             {
                 player->angular_speed = lerp_f32(player->angular_speed, angular_speed, angular_change);
             }
-            if (input_key_pressed(g_state->window, GLFW_KEY_D))
+            if (input_key_pressed_raw(g_state->window, GLFW_KEY_D))
             {
                 player->angular_speed = lerp_f32(player->angular_speed, -angular_speed, angular_change);
             }
@@ -181,6 +209,16 @@ main(void)
 
         /** apply input */
         {
+            if (input_action_pressed(GameKeyEditor))
+            {
+                g_state->editor_active = !g_state->editor_active;
+            }
+
+            if (input_action_pressed(GameKeyPause))
+            {
+                g_state->is_paused = !g_state->is_paused;
+            }
+
             // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
             player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
             if (gas > 0)
@@ -500,6 +538,7 @@ main(void)
         r_draw_pass(g_state->pass_post_processing, g_state->pass_default, SORT_LAYER_INDEX_GAME, g_state->material_post_processing, g_post_processing_state->uniform_data);
         r_render(g_renderer, g_state->time.dt);
         window_update(g_state->window);
+        profiler_end();
     }
 
     window_destroy(g_state->window);

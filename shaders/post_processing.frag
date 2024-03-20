@@ -25,6 +25,7 @@ layout (std140, binding = 4) uniform Custom
 {
     vec4 u_color;
     vec4 u_aberration;
+    float u_saturation;
 };
 
 uniform mat4 u_model;
@@ -40,7 +41,7 @@ out vec4 color;
 // 0: Addition, 1: Screen, 2: Overlay, 3: Soft Light, 4: Lighten-Only
 #define BLEND_MODE 0
 #define SPEED 2.0
-#define INTENSITY 0.075
+#define INTENSITY 0.055
 // What gray level noise should tend to.
 #define MEAN 0.0
 // Controls the contrast/variance of noise.
@@ -66,7 +67,7 @@ void main() {
     
     // TODO(selim): add LUT color grading
     /** post_processing: color grading */
-    color.r *= 1.06;
+    color.r *= 1.12;
     color.g *= 1.04;
     color.b *= 1.03;
     
@@ -82,4 +83,6 @@ void main() {
     noise = gaussian(noise, float(MEAN), float(VARIANCE) * float(VARIANCE));
     vec3 grain = vec3(noise) * (1.0 - color.rgb);
     color.rgb += grain * w;
+    float grayscale = color.r * 0.299 + color.g * 0.587 + color.b * 0.114;
+    color.rgb = mix(vec3(grayscale), color.rgb, u_saturation);
 }

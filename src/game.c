@@ -23,6 +23,7 @@ g_init()
     ArenaTemp temp = scratch_begin(0, 0);
 
     oe_audio_init(persistent_arena);
+    input_manager_init(persistent_arena, g_state->window);
 
     /** renderer */
     RendererConfiguration* r_config = r_config_new(g_state->frame_arena);
@@ -84,6 +85,10 @@ g_init()
     xassert(ColliderType_COUNT < 64, "There are more collider types than available");
     bitfield_set(&g_state->collision_map[ColliderTypePlayerAttack], ColliderTypeEnemyHitbox);
     bitfield_set(&g_state->collision_map[ColliderTypeEnemyAttack], ColliderTypePlayerHitbox);
+
+    /** register keys */
+    input_manager_register_action(string("key_editor"), GameKeyEditor, GLFW_KEY_O);
+    input_manager_register_action(string("key_pause"), GameKeyPause, GLFW_KEY_P);
 
     scratch_end(temp);
 }
