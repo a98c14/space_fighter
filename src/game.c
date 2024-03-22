@@ -53,6 +53,7 @@ g_init()
     draw_context_activate_atlas(atlas);
     post_processing_init(persistent_arena, g_renderer);
     ps_init(persistent_arena, g_state->frame_arena, atlas, 512, g_state->pass_default);
+    game_ui_state_init(g_state->persistent_arena);
 
     /** assets */
     {
@@ -89,6 +90,21 @@ g_init()
     /** register keys */
     input_manager_register_action(string("key_editor"), GameKeyEditor, GLFW_KEY_O);
     input_manager_register_action(string("key_pause"), GameKeyPause, GLFW_KEY_P);
+
+    /** skills */
+    {
+        g_state->skills = arena_push_array_zero(g_state->persistent_arena, GameSkill, 128);
+
+        g_state->skills[g_state->skill_count++] = (GameSkill){
+            .description = string("Healthy"),
+            .sprite      = SPRITE_GAME_UI_UPGRADE_ICON_HEALTH};
+        g_state->skills[g_state->skill_count++] = (GameSkill){
+            .description = string("Damager"),
+            .sprite      = SPRITE_GAME_UI_UPGRADE_ICON_DAMAGE};
+        g_state->skills[g_state->skill_count++] = (GameSkill){
+            .description = string("Fast"),
+            .sprite      = SPRITE_GAME_UI_UPGRADE_ICON_MOVEMENT_SPEED};
+    }
 
     scratch_end(temp);
 }
@@ -147,7 +163,33 @@ draw_projectile(Vec2 pos, float32 radius, Color color)
     r_draw_single(key, transform_quad_aligned(pos, vec2(radius, radius)), &shader_data);
 }
 
-/** utils */
+/* -------------------------------------------------------------------------- */
+/*                                    UTILS                                   */
+/* -------------------------------------------------------------------------- */
+internal bool32
+g_state_enabled(GameStateFlag flag)
+{
+    return (g_state->flags & flag) > 0;
+}
+
+internal void
+g_state_toggle(GameStateFlag flag)
+{
+    g_state->flags = g_state->flags ^ flag;
+}
+
+internal void
+g_state_enable(GameStateFlag flag)
+{
+    g_state->flags = g_state->flags | flag;
+}
+
+internal void
+g_state_disable(GameStateFlag flag)
+{
+    g_state->flags = g_state->flags & ~flag;
+}
+
 internal GameEntity*
 g_spawn_enemy(Vec2 position)
 {

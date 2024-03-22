@@ -78,7 +78,7 @@ main(void)
             break;
 
         float32 dt = g_state->time.dt;
-        if (g_state->is_paused)
+        if (g_state_enabled(GameStateFlagPaused))
         {
             post_processing_set_saturation(0);
             dt = 0;
@@ -120,11 +120,11 @@ main(void)
             g_entity_free(entity);
         }
 
-        game_hud_update();
+        game_ui_update();
         input_manager_update(g_state->time);
 
         /** editor */
-        profiler_scope("editor") if (g_state->editor_active)
+        profiler_scope("editor") if (g_state_enabled(GameStateFlagEditor))
         {
             ArenaTemp     temp        = scratch_begin(0, 0);
             const float32 line_height = 8;
@@ -208,15 +208,17 @@ main(void)
         }
 
         /** apply input */
+        if (!g_state_enabled(GameStateFlagPaused))
         {
             if (input_action_pressed(GameKeyEditor))
             {
-                g_state->editor_active = !g_state->editor_active;
+                g_state_toggle(GameStateFlagEditor);
             }
 
             if (input_action_pressed(GameKeyPause))
             {
-                g_state->is_paused = !g_state->is_paused;
+                g_state_toggle(GameStateFlagPaused);
+                g_state_toggle(GameStateFlagLevelUp);
             }
 
             // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
@@ -473,7 +475,7 @@ main(void)
             }
 
             /** editor - physics */
-            profiler_scope("editor - physics") if (g_state->editor_active)
+            profiler_scope("editor - physics") if (g_state_enabled(GameStateFlagEditor))
             {
                 draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_default) for (uint32 i = 0; i < collider_count; i++)
                 {

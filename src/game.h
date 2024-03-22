@@ -11,7 +11,6 @@
 
 #include <opus.h>
 
-#include "game_ui.h"
 #include "generated/sprites.h"
 #include "particle_system.h"
 #include "post_processing.h"
@@ -33,6 +32,17 @@
 #define SORT_LAYER_INDEX_UI                 13
 #define SORT_LAYER_INDEX_POST_GAME          15
 
+typedef struct
+{
+    SpriteIndex sprite;
+    String      description;
+
+    /** features */
+    float32 speed_increase;
+    float32 damage_increase;
+    int32   additional_projectile_count;
+} GameSkill;
+
 typedef enum
 {
     ColliderTypeNone,
@@ -42,6 +52,14 @@ typedef enum
     ColliderTypeEnemyAttack,
     ColliderType_COUNT
 } ColliderType;
+
+typedef enum
+{
+    GameStateFlagNone    = 0,
+    GameStateFlagPaused  = 1 << 0,
+    GameStateFlagLevelUp = 1 << 1,
+    GameStateFlagEditor  = 1 << 2,
+} GameStateFlag;
 
 /** entity */
 typedef uint64 EntityProp;
@@ -182,11 +200,15 @@ typedef struct
     GameEntity* last_entity;
 
     /** game state */
-    bool32  is_paused;
-    float32 t_spawn;
+    GameStateFlag flags;
+    float32       t_spawn;
 
-    /** editor */
-    bool32 editor_active;
+    uint8   player_skill_count;
+    uint64* player_skills;
+
+    /** data */
+    uint32     skill_count;
+    GameSkill* skills;
 } GameState;
 global GameState* g_state;
 
@@ -225,6 +247,10 @@ typedef enum
 /* -------------------------------------------------------------------------- */
 /*                                    UTILS                                   */
 /* -------------------------------------------------------------------------- */
+internal bool32      g_state_enabled(GameStateFlag flag);
+internal void        g_state_toggle(GameStateFlag flag);
+internal void        g_state_enable(GameStateFlag flag);
+internal void        g_state_disable(GameStateFlag flag);
 internal GameEntity* g_spawn_enemy(Vec2 position);
 internal GameEntity* g_spawn_bullet(Vec2 position, Vec2 direction, ColliderType collider_type, Color color, float32 size, float32 speed, AnimationIndex on_delete_animation);
 
