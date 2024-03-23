@@ -32,6 +32,8 @@
 #define SORT_LAYER_INDEX_UI                 13
 #define SORT_LAYER_INDEX_POST_GAME          15
 
+#define MAX_LEVEL_COUNT 8
+
 typedef struct
 {
     SpriteIndex sprite;
@@ -202,6 +204,10 @@ typedef struct
     /** game state */
     GameStateFlag flags;
     float32       t_spawn;
+
+    uint32 player_level;
+    uint64 player_experience;
+    uint64 experience_requirement[MAX_LEVEL_COUNT];
 
     uint8   player_skill_count;
     uint64* player_skills;

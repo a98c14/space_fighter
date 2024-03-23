@@ -88,6 +88,11 @@ main(void)
             post_processing_set_saturation(1);
         }
 
+        if (g_state->player_level < MAX_LEVEL_COUNT && g_state->player_experience > g_state->experience_requirement[g_state->player_level + 1])
+        {
+            g_state_enable(GameStateFlagLevelUp);
+        }
+
         GameEntity* entity;
         /** delete marked entities */
         profiler_scope("delete marked entities") for_each(entity, g_state->first_entity)
@@ -370,6 +375,7 @@ main(void)
             entity->force = add_vec2(entity->force, direction_to_vec2(entity->position, player->position, dt * 1000));
             if (distsqr_vec2(entity->position, player->position) < 1000)
             {
+                g_state->player_experience++;
                 g_entity_enable_prop(entity, EntityProp_MarkedForDeletion);
             }
         }

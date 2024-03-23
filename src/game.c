@@ -106,6 +106,18 @@ g_init()
             .sprite      = SPRITE_GAME_UI_UPGRADE_ICON_MOVEMENT_SPEED};
     }
 
+    /** level exp */
+    {
+        g_state->experience_requirement[0] = 0;
+        g_state->experience_requirement[1] = 30;
+        g_state->experience_requirement[2] = 100;
+        g_state->experience_requirement[3] = 150;
+        g_state->experience_requirement[4] = 200;
+        g_state->experience_requirement[5] = 300;
+        g_state->experience_requirement[6] = 400;
+        g_state->experience_requirement[7] = 500;
+    }
+
     scratch_end(temp);
 }
 

@@ -31,12 +31,24 @@ game_ui_update()
                 if (game_hud_draw_level_up_card(ui_key_str(string_pushf(temp.arena, "skill_box_%d", i)), rect_cut_left(&container, card_container_width), g_state->skills[i]).pressed)
                 {
                     g_state_disable(GameStateFlagLevelUp | GameStateFlagPaused);
+                    g_state->player_level++;
 
                     log_info("pressed skill %d", i);
                 }
             }
         }
+
+        Rect bottom         = rect_cut_bottom(&screen, 10);
+        Rect experience_bar = draw_sprite_rect(bottom, SPRITE_GAME_UI_EXPERIENCE_BAR, ANCHOR_B_B);
+
+        float32 experience_required_for_current_level = g_state->experience_requirement[g_state->player_level + 1] - g_state->experience_requirement[g_state->player_level];
+        float32 experience_fill_ratio                 = clamp(0, (g_state->player_experience - g_state->experience_requirement[g_state->player_level]) / experience_required_for_current_level, 1);
+        Rect    experience_bar_fill_container         = rect_move(rect_shrink(experience_bar, vec2(10, 2)), vec2(0, -0.5));
+        Rect    experience_bar_fill                   = rect_anchor(rect_from_wh(experience_bar_fill_container.w * experience_fill_ratio, experience_bar_fill_container.h), experience_bar_fill_container, ANCHOR_L_L);
+        draw_rect(experience_bar_fill, ColorBlue700);
+
         g_state->background_object_count;
+
         draw_context_pop();
     }
 
@@ -70,9 +82,10 @@ game_ui_box_from_key(UI_Key key)
 internal GameUISignal
 game_hud_draw_level_up_card(UI_Key key, Rect rect, GameSkill skill)
 {
-    GameUISignal result = {0};
-    GameUIBox*   ui_box = game_ui_box_from_key(key);
-    bool32       is_hot = ui_key_same(key, g_game_ui_state->hot);
+    GameUISignal result    = {0};
+    GameUIBox*   ui_box    = game_ui_box_from_key(key);
+    bool32       is_hot    = ui_key_same(key, g_game_ui_state->hot);
+    bool32       is_active = ui_key_same(key, g_game_ui_state->active);
     if (!is_hot && intersects_rect_point(rect, g_state->input_mouse.screen).intersects)
     {
         g_game_ui_state->hot = key;
@@ -85,7 +98,7 @@ game_hud_draw_level_up_card(UI_Key key, Rect rect, GameSkill skill)
         ui_box->t_active        = g_state->time.current_frame_time;
     }
 
-    if (is_hot && input_mouse_released(g_state->input_mouse, MouseButtonStateLeft))
+    if (is_active && input_mouse_released(g_state->input_mouse, MouseButtonStateLeft))
     {
         result.pressed = true;
     }
