@@ -109,13 +109,13 @@ g_init()
     /** level exp */
     {
         g_state->experience_requirement[0] = 0;
-        g_state->experience_requirement[1] = 30;
-        g_state->experience_requirement[2] = 100;
-        g_state->experience_requirement[3] = 150;
-        g_state->experience_requirement[4] = 200;
-        g_state->experience_requirement[5] = 300;
-        g_state->experience_requirement[6] = 400;
-        g_state->experience_requirement[7] = 500;
+        g_state->experience_requirement[1] = 200;
+        g_state->experience_requirement[2] = 300;
+        g_state->experience_requirement[3] = 350;
+        g_state->experience_requirement[4] = 400;
+        g_state->experience_requirement[5] = 500;
+        g_state->experience_requirement[6] = 600;
+        g_state->experience_requirement[7] = 700;
     }
 
     scratch_end(temp);
@@ -137,6 +137,25 @@ g_entity_alloc()
     return result;
 }
 
+internal GameEntity*
+g_entity_from_handle(GameEntityHandle handle)
+{
+    GameEntity* entity = (GameEntity*)(((uint8*)g_state->persistent_arena) + handle.index);
+    if (entity->gen != handle.gen)
+        return &g_entity_nil;
+
+    return entity;
+}
+
+internal GameEntityHandle
+g_handle_from_entity(GameEntity* entity)
+{
+    GameEntityHandle result = {0};
+    result.index            = (uint64)((uint8*)entity - (uint8*)g_state->persistent_arena);
+    result.gen              = entity->gen;
+    return result;
+}
+
 internal void
 g_entity_free(GameEntity* e)
 {
@@ -144,7 +163,7 @@ g_entity_free(GameEntity* e)
     // zero everything but the generation
     uint64 generation = e->gen;
     memory_zero_struct(e);
-    e->gen = generation;
+    e->gen = generation + 1;
     stack_push(g_state->free_entities, e);
     g_state->entity_count--;
 }

@@ -15,32 +15,36 @@ main(void)
     tctx_init_and_equip(&tctx);
     g_init();
 
-    GameEntity* player               = g_entity_alloc();
-    player->speed                    = 125;
-    player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
-    player->attack_rate              = 0.1;
-    player->collider_type            = ColliderTypePlayerHitbox;
-    player->health                   = 5;
-    player->invulnerability_duration = 1;
-    player->collider_radius          = 16;
-    player->projectile_count         = 1;
-    player->bullet_spawn_offset      = vec2(0, 9);
-    player->look_at                  = vec2(1, 0);
-    entity_set_scale(player, vec2_one());
-    entity_set_color(player, ColorInvisibleWhite);
-    g_entity_enable_prop(player, EntityProp_Player);
-    g_entity_enable_prop(player, EntityProp_SmoothMovement);
-    g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
-    g_entity_enable_prop(player, EntityProp_Collider);
+    GameEntityHandle player_handle;
+    {
+        GameEntity* player               = g_entity_alloc();
+        player->speed                    = 125;
+        player->sprite                   = SPRITE_GAME_SHIPS_RED_BEATLE;
+        player->attack_rate              = 0.1;
+        player->collider_type            = ColliderTypePlayerHitbox;
+        player->health                   = 5;
+        player->invulnerability_duration = 1;
+        player->collider_radius          = 16;
+        player->projectile_count         = 1;
+        player->bullet_spawn_offset      = vec2(0, 9);
+        player->look_at                  = vec2(1, 0);
+        entity_set_scale(player, vec2_one());
+        entity_set_color(player, ColorInvisibleWhite);
+        g_entity_enable_prop(player, EntityProp_Player);
+        g_entity_enable_prop(player, EntityProp_SmoothMovement);
+        g_entity_enable_prop(player, EntityProp_RotateTowardsAim);
+        g_entity_enable_prop(player, EntityProp_Collider);
+        player_handle = g_handle_from_entity(player);
+    }
 
     g_state->t_spawn = 2;
 
-    Trail* right_wing_trail = trail_new(g_state->persistent_arena, 16);
-    Trail* left_wing_trail  = trail_new(g_state->persistent_arena, 16);
+    Trail* right_wing_trail = trail_new(g_state->persistent_arena);
+    Trail* left_wing_trail  = trail_new(g_state->persistent_arena);
     trail_set_color(left_wing_trail, ColorWhite, ColorWhite);
-    trail_set_width(left_wing_trail, 0.8, 0);
+    trail_set_width(left_wing_trail, 1, 0);
     trail_set_color(right_wing_trail, ColorWhite, ColorWhite);
-    trail_set_width(right_wing_trail, 0.8, 0);
+    trail_set_width(right_wing_trail, 1, 0);
 
     /** setup background objects */
     {
@@ -71,6 +75,8 @@ main(void)
     while (!window_should_close(g_state->window))
     {
         profiler_begin("frame");
+        bool32 gas = false;
+
         arena_reset(g_state->frame_arena);
         draw_text(string(VERSION_NUMBER), rect_shrink_f32(screen_rect(), 8), ANCHOR_BR_BR, 7, ColorWhite);
         g_state->time = engine_get_time(g_state->time);
@@ -90,7 +96,7 @@ main(void)
 
         if (g_state->player_level < MAX_LEVEL_COUNT && g_state->player_experience > g_state->experience_requirement[g_state->player_level + 1])
         {
-            g_state_enable(GameStateFlagLevelUp);
+            g_state_enable(GameStateFlagLevelUp | GameStateFlagPaused);
         }
 
         GameEntity* entity;
@@ -117,12 +123,36 @@ main(void)
                     coin->on_delete_animation = ANIMATION_GAME_VFX_EXPERIENCE;
                     coin->force               = random_direction(200);
                     coin->position            = entity->position;
+
+                    GameEntity* player = g_entity_from_handle(player_handle);
                     entity_set_color(player, ColorInvisibleWhite);
                     entity_set_scale_animation(coin, vec2_zero(), vec2_one(), 0.6, EasingTypeEaseOutElastic);
                 }
             }
 
             g_entity_free(entity);
+        }
+
+        bool32      is_player_dead = false;
+        GameEntity* player         = g_entity_from_handle(player_handle);
+        if (player == &g_entity_nil)
+        {
+            is_player_dead = true;
+        }
+
+        if (is_player_dead)
+        {
+            g_state_enable(GameStateFlagPaused);
+            draw_scope(SORT_LAYER_INDEX_UI, ViewTypeScreen, g_state->pass_default);
+            ArenaTemp temp   = scratch_begin(0, 0);
+            Rect      screen = screen_rect();
+            draw_rect(screen, ColorBlackA);
+            Rect inner_container = draw_rect(rect_shrink(screen, vec2(0, 120)), ColorBlack);
+            rect_cut_top(&inner_container, 10);
+            draw_text(string("GAME OVER"), inner_container, ANCHOR_T_T, 20, ColorWhite);
+            rect_cut_top(&inner_container, 50);
+            draw_text(string_pushf(temp.arena, "Score: %d", 123), inner_container, ANCHOR_T_T, 16, ColorWhite);
+            scratch_end(temp);
         }
 
         game_ui_update();
@@ -176,84 +206,86 @@ main(void)
         }
 
         /** gather input */
-        bool32 gas = false;
+        if (!is_player_dead)
         {
-            if (input_key_pressed_raw(g_state->window, GLFW_KEY_SPACE))
             {
-                gas = true;
-            }
-
-            float32 angular_change = dt * 8;
-            float32 angular_speed  = 400;
-            if (input_key_pressed_raw(g_state->window, GLFW_KEY_W))
-            {
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, player->speed * dt));
-                angular_speed -= 200;
-            }
-            if (input_key_pressed_raw(g_state->window, GLFW_KEY_S))
-            {
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -player->speed * dt * 0.6));
-            }
-
-            if (input_key_pressed_raw(g_state->window, GLFW_KEY_A))
-            {
-                player->angular_speed = lerp_f32(player->angular_speed, angular_speed, angular_change);
-            }
-            if (input_key_pressed_raw(g_state->window, GLFW_KEY_D))
-            {
-                player->angular_speed = lerp_f32(player->angular_speed, -angular_speed, angular_change);
-            }
-            else
-            {
-                player->angular_speed = lerp_f32(player->angular_speed, 0, angular_change);
-            }
-            player->angular_speed *= gas ? 0.7 : 1;
-
-            g_state->input_mouse = input_mouse_get(g_state->window, g_renderer->camera, g_state->input_mouse);
-        }
-
-        /** apply input */
-        if (!g_state_enabled(GameStateFlagPaused))
-        {
-            if (input_action_pressed(GameKeyEditor))
-            {
-                g_state_toggle(GameStateFlagEditor);
-            }
-
-            if (input_action_pressed(GameKeyPause))
-            {
-                g_state_toggle(GameStateFlagPaused);
-                g_state_toggle(GameStateFlagLevelUp);
-            }
-
-            // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
-            player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
-            if (gas > 0)
-            {
-                player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 300 * dt));
-            }
-
-            if (gas == 0)
-            {
-                player->force = lerp_vec2(player->force, clamp_vec2_length(0, player->force, 200), dt);
-            }
-
-            if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
-            {
-                // TODO(selim):  move bullet firing code to separate place
-                player->t_attack        = player->attack_rate;
-                Vec2    bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
-                float32 starting_angle  = angle_vec2(player->look_at) - (uint32)(player->projectile_count / 2) * 15;
-                oe_audio_play(gun_sound);
-                for (uint32 i = 0; i < player->projectile_count; i++)
+                if (input_key_pressed_raw(g_state->window, GLFW_KEY_SPACE))
                 {
-                    float32 angle     = starting_angle + i * 15;
-                    Vec2    direction = rotate_vec2(vec2(1, 0), angle);
-                    g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 240, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
-                    ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
-                    player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -2));
+                    gas = true;
                 }
-                post_processing_add_shake(2);
+
+                float32 angular_change = dt * 8;
+                float32 angular_speed  = 400;
+                if (input_key_pressed_raw(g_state->window, GLFW_KEY_W))
+                {
+                    player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, player->speed * dt));
+                    angular_speed -= 200;
+                }
+                if (input_key_pressed_raw(g_state->window, GLFW_KEY_S))
+                {
+                    player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, -player->speed * dt * 0.6));
+                }
+
+                if (input_key_pressed_raw(g_state->window, GLFW_KEY_A))
+                {
+                    player->angular_speed = lerp_f32(player->angular_speed, angular_speed, angular_change);
+                }
+                if (input_key_pressed_raw(g_state->window, GLFW_KEY_D))
+                {
+                    player->angular_speed = lerp_f32(player->angular_speed, -angular_speed, angular_change);
+                }
+                else
+                {
+                    player->angular_speed = lerp_f32(player->angular_speed, 0, angular_change);
+                }
+                player->angular_speed *= gas ? 0.7 : 1;
+
+                g_state->input_mouse = input_mouse_get(g_state->window, g_renderer->camera, g_state->input_mouse);
+            }
+
+            /** apply input */
+            if (!g_state_enabled(GameStateFlagPaused))
+            {
+                if (input_action_pressed(GameKeyEditor))
+                {
+                    g_state_toggle(GameStateFlagEditor);
+                }
+
+                if (input_action_pressed(GameKeyPause))
+                {
+                    g_state_toggle(GameStateFlagPaused);
+                    // g_state_toggle(GameStateFlagLevelUp);
+                }
+
+                // player->look_at = heading_to_vec2(player->position, g_state->input_mouse.world);
+                player->look_at = rotate_vec2(player->look_at, player->angular_speed * dt);
+                if (gas > 0)
+                {
+                    player->force = add_vec2(player->force, mul_vec2_f32(player->look_at, 300 * dt));
+                }
+
+                if (gas == 0)
+                {
+                    player->force = lerp_vec2(player->force, clamp_vec2_length(0, player->force, 200), dt);
+                }
+
+                if (input_mouse_held(g_state->input_mouse, MouseButtonStateLeft) && player->t_attack <= 0)
+                {
+                    // TODO(selim):  move bullet firing code to separate place
+                    player->t_attack        = player->attack_rate;
+                    Vec2    bullet_position = add_vec2(player->position, rotate_vec2(player->bullet_spawn_offset, player->rotation));
+                    float32 starting_angle  = angle_vec2(player->look_at) - (uint32)(player->projectile_count / 2) * 15;
+                    oe_audio_play(gun_sound);
+                    for (uint32 i = 0; i < player->projectile_count; i++)
+                    {
+                        float32 angle     = starting_angle + i * 15;
+                        Vec2    direction = rotate_vec2(vec2(1, 0), angle);
+                        g_spawn_bullet(bullet_position, direction, ColliderTypePlayerAttack, ColorYellow500, 12, 240, ANIMATION_GAME_VFX_HIT_EFFECT_PLAYER_BULLET);
+                        ParticleIndex p = ps_particle_animation(vec3_xy(bullet_position), ANIMATION_GAME_VFX_MUZZLE_FLASH_1, angle);
+                        player->force   = add_vec2(player->force, mul_vec2_f32(player->look_at, -2));
+                    }
+                    post_processing_add_shake(2);
+                }
             }
         }
 
@@ -492,21 +524,26 @@ main(void)
         }
 
         /** draw trail */
-        profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
+        if (!is_player_dead)
         {
-            if (gas)
+            profiler_scope("draw trail") draw_scope(SORT_LAYER_INDEX_GAME, ViewTypeWorld, g_state->pass_pixel_perfect)
             {
-                Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
-                trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
-                trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
+                if (gas)
+                {
+                    Vec2 normal = vec2(-player->look_at.y, player->look_at.x);
+                    trail_push_position(left_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, 12)));
+                    trail_push_position(right_wing_trail, add_vec2(player->position, mul_vec2_f32(normal, -12)));
+                }
+                else
+                {
+                    trail_push_empty(left_wing_trail);
+                    trail_push_empty(right_wing_trail);
+                }
 
+                trail_update(left_wing_trail, dt);
+                trail_update(right_wing_trail, dt);
                 trail_draw(left_wing_trail);
                 trail_draw(right_wing_trail);
-            }
-            else
-            {
-                trail_reset(left_wing_trail);
-                trail_reset(right_wing_trail);
             }
         }
 

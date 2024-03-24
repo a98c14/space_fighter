@@ -32,8 +32,6 @@ game_ui_update()
                 {
                     g_state_disable(GameStateFlagLevelUp | GameStateFlagPaused);
                     g_state->player_level++;
-
-                    log_info("pressed skill %d", i);
                 }
             }
         }

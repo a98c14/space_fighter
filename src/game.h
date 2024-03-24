@@ -94,6 +94,12 @@ typedef struct
 typedef uint64            GameEntityIndex;
 typedef struct GameEntity GameEntity;
 
+typedef struct
+{
+    uint64 index;
+    uint32 gen;
+} GameEntityHandle;
+
 // TODO(selim): static data about entities can be moved to a configuration struct outside of entitiy list
 struct GameEntity
 {
@@ -167,6 +173,8 @@ struct GameEntity
     uint32         frame;
 };
 
+read_only global GameEntity g_entity_nil = {0};
+
 typedef struct
 {
     /** engine */
@@ -223,10 +231,12 @@ internal void g_init();
 /* -------------------------------------------------------------------------- */
 /*                                   ENTITY                                   */
 /* -------------------------------------------------------------------------- */
-internal GameEntity* g_entity_alloc();
-internal void        g_entity_free(GameEntity* e);
-internal bool32      g_entity_has_prop(GameEntity* e, EntityProp prop);
-internal void        g_entity_enable_prop(GameEntity* e, EntityProp prop);
+internal GameEntity*      g_entity_alloc();
+internal GameEntity*      g_entity_from_handle(GameEntityHandle handle);
+internal GameEntityHandle g_handle_from_entity(GameEntity* entity);
+internal void             g_entity_free(GameEntity* e);
+internal bool32           g_entity_has_prop(GameEntity* e, EntityProp prop);
+internal void             g_entity_enable_prop(GameEntity* e, EntityProp prop);
 
 /* -------------------------------------------------------------------------- */
 /*                                   RENDER                                   */
